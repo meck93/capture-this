@@ -1,0 +1,14 @@
+included:
+  - Sources
+  - Tests
+excluded:
+  - .build
+  - DerivedData
+  - CaptureThis.xcodeproj
+
+line_length:
+  warning: 120
+  error: 160
+
+identifier_name:
+  min_length: 2

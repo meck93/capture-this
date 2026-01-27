@@ -1,0 +1,47 @@
+name: CaptureThis
+options:
+  deploymentTarget:
+    macOS: "15.0"
+  bundleIdPrefix: com.capturethis
+
+settings:
+  base:
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+
+targets:
+  CaptureThis:
+    type: application
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Sources
+    resources:
+      - path: Resources
+    info:
+      path: Config/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThis
+        CODE_SIGN_ENTITLEMENTS: Config/CaptureThis.entitlements
+  CaptureThisTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Tests
+    dependencies:
+      - target: CaptureThis
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisTests
+
+schemes:
+  CaptureThis:
+    build:
+      targets:
+        CaptureThis: all
+    test:
+      targets:
+        - CaptureThisTests

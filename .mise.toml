@@ -1,0 +1,37 @@
+[tools]
+swift = "latest"
+xcodegen = "latest"
+swiftlint = "latest"
+swiftformat = "latest"
+
+[tasks.generate]
+description = "Generate the Xcode project"
+run = "xcodegen generate"
+
+[tasks.lint]
+description = "Run SwiftLint and SwiftFormat in lint mode"
+run = ["swiftlint --strict", "swiftformat --lint ."]
+
+[tasks.format]
+description = "Format Swift code with SwiftFormat"
+run = "swiftformat ."
+
+[tasks.build]
+description = "Build the app"
+run = "xcodebuild -scheme CaptureThis -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"
+
+[tasks.test]
+description = "Run unit tests"
+run = "xcodebuild -scheme CaptureThis -configuration Debug -derivedDataPath .build -destination 'platform=macOS' test"
+
+[tasks.release-build]
+description = "Build a release app bundle"
+run = "xcodebuild -scheme CaptureThis -configuration Release -derivedDataPath .build -destination 'platform=macOS' build"
+
+[tasks.package]
+description = "Package .app.zip and .dmg"
+run = "Scripts/package.sh"
+
+[tasks.ci]
+description = "Generate project, lint, build, and test"
+run = ["mise run generate", "mise run lint", "mise run build", "mise run test"]
