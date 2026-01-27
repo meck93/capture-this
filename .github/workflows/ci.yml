@@ -20,6 +20,9 @@ jobs:
         with:
           cache: true
 
+      - name: Enable mise experimental
+        run: mise settings experimental=true
+
       - name: Install tools
         run: mise install
 
