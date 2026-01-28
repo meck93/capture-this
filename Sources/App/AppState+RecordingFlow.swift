@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import Foundation
 import ReplayKit
 import ScreenCaptureKit
@@ -75,20 +76,29 @@ extension AppState {
 
       let config = makeStreamConfiguration()
 
-      try await captureService.startRecording(
-        filter: filter,
-        configuration: config,
-        outputURL: outputURL,
-        presenterOverlayHandler: { [weak self] enabled in
+      let options = CaptureRecordingOptions(
+        preferredFileType: preferredOutputFileType(),
+        preferredVideoCodec: preferredVideoCodecType()
+      )
+      let handlers = CaptureRecordingHandlers(
+        presenterOverlay: { [weak self] enabled in
           Task { @MainActor in
             self?.presenterOverlayEnabled = enabled
           }
         },
-        errorHandler: { [weak self] error in
+        error: { [weak self] error in
           Task { @MainActor in
             self?.handleError(error)
           }
         }
+      )
+
+      try await captureService.startRecording(
+        filter: filter,
+        configuration: config,
+        outputURL: outputURL,
+        options: options,
+        handlers: handlers
       )
 
       recordingStartDate = Date()
@@ -147,8 +157,35 @@ extension AppState {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
     let safeTimestamp = formatter.string(from: Date()).replacingOccurrences(of: ":", with: "-")
-    let filename = "CaptureThis_\(safeTimestamp).mp4"
+    let filename = "CaptureThis_\(safeTimestamp).\(preferredOutputExtension())"
     return directory.appendingPathComponent(filename)
+  }
+
+  private func preferredOutputFileType() -> AVFileType {
+    switch settings.outputFormat {
+    case .mov:
+      .mov
+    case .mp4:
+      .mp4
+    }
+  }
+
+  private func preferredVideoCodecType() -> AVVideoCodecType {
+    switch settings.recordingQuality {
+    case .high:
+      .hevc
+    case .standard:
+      .h264
+    }
+  }
+
+  private func preferredOutputExtension() -> String {
+    switch settings.outputFormat {
+    case .mov:
+      "mov"
+    case .mp4:
+      "mp4"
+    }
   }
 
   func stopRecording(discard: Bool) async {

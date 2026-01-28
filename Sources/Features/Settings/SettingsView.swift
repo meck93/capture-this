@@ -31,6 +31,26 @@ struct SettingsView: View {
           set: { appState.updateSettings(appState.settings.updating(systemAudioEnabled: $0)) }
         ))
       }
+
+      Section("Output") {
+        Picker("Format", selection: Binding(
+          get: { appState.settings.outputFormat },
+          set: { appState.updateSettings(appState.settings.updating(outputFormat: $0)) }
+        )) {
+          ForEach(RecordingFileFormat.allCases) { format in
+            Text(format.displayName).tag(format)
+          }
+        }
+
+        Picker("Quality", selection: Binding(
+          get: { appState.settings.recordingQuality },
+          set: { appState.updateSettings(appState.settings.updating(recordingQuality: $0)) }
+        )) {
+          ForEach(RecordingQuality.allCases) { quality in
+            Text(quality.displayName).tag(quality)
+          }
+        }
+      }
     }
     .padding(20)
     .frame(width: 420)

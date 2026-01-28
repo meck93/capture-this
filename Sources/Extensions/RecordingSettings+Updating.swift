@@ -5,7 +5,9 @@ extension RecordingSettings {
     countdownSeconds: Int? = nil,
     cameraEnabled: Bool? = nil,
     microphoneEnabled: Bool? = nil,
-    systemAudioEnabled: Bool? = nil
+    systemAudioEnabled: Bool? = nil,
+    outputFormat: RecordingFileFormat? = nil,
+    recordingQuality: RecordingQuality? = nil
   ) -> RecordingSettings {
     var copy = self
     if let countdownSeconds {
@@ -19,6 +21,12 @@ extension RecordingSettings {
     }
     if let systemAudioEnabled {
       copy.isSystemAudioEnabled = systemAudioEnabled
+    }
+    if let outputFormat {
+      copy.outputFormat = outputFormat
+    }
+    if let recordingQuality {
+      copy.recordingQuality = recordingQuality
     }
     return copy
   }

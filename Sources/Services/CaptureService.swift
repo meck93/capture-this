@@ -2,6 +2,16 @@ import AVFoundation
 import Foundation
 import ScreenCaptureKit
 
+struct CaptureRecordingOptions {
+  let preferredFileType: AVFileType?
+  let preferredVideoCodec: AVVideoCodecType?
+}
+
+struct CaptureRecordingHandlers {
+  let presenterOverlay: (Bool) -> Void
+  let error: (Error) -> Void
+}
+
 final class CaptureService: NSObject {
   private var stream: SCStream?
   private var recordingOutput: SCRecordingOutput?
@@ -16,21 +26,27 @@ final class CaptureService: NSObject {
     filter: SCContentFilter,
     configuration: SCStreamConfiguration,
     outputURL: URL,
-    presenterOverlayHandler: @escaping (Bool) -> Void,
-    errorHandler: @escaping (Error) -> Void
+    options: CaptureRecordingOptions,
+    handlers: CaptureRecordingHandlers
   ) async throws {
     if stream != nil {
       try await stopAndReset()
     }
 
     self.outputURL = outputURL
-    self.presenterOverlayHandler = presenterOverlayHandler
-    self.errorHandler = errorHandler
+    presenterOverlayHandler = handlers.presenterOverlay
+    errorHandler = handlers.error
 
     let stream = SCStream(filter: filter, configuration: configuration, delegate: self)
     let recordingConfig = SCRecordingOutputConfiguration()
-    let outputFileType = preferredFileType(from: recordingConfig.availableOutputFileTypes)
-    let videoCodec = preferredVideoCodec(from: recordingConfig.availableVideoCodecTypes)
+    let outputFileType = preferredFileType(
+      from: recordingConfig.availableOutputFileTypes,
+      preferred: options.preferredFileType
+    )
+    let videoCodec = preferredVideoCodec(
+      from: recordingConfig.availableVideoCodecTypes,
+      preferred: options.preferredVideoCodec
+    )
     let resolvedOutputURL = outputURL
       .deletingPathExtension()
       .appendingPathExtension(fileExtension(for: outputFileType))
@@ -131,7 +147,10 @@ extension CaptureService: SCRecordingOutputDelegate {
 }
 
 extension CaptureService {
-  private func preferredFileType(from available: [AVFileType]) -> AVFileType {
+  private func preferredFileType(from available: [AVFileType], preferred: AVFileType?) -> AVFileType {
+    if let preferred, available.contains(preferred) {
+      return preferred
+    }
     if available.contains(.mp4) {
       return .mp4
     }
@@ -141,7 +160,13 @@ extension CaptureService {
     return available.first ?? .mp4
   }
 
-  private func preferredVideoCodec(from available: [AVVideoCodecType]) -> AVVideoCodecType {
+  private func preferredVideoCodec(
+    from available: [AVVideoCodecType],
+    preferred: AVVideoCodecType?
+  ) -> AVVideoCodecType {
+    if let preferred, available.contains(preferred) {
+      return preferred
+    }
     if available.contains(.h264) {
       return .h264
     }
