@@ -33,3 +33,8 @@ mise run package
 ```
 
 Artifacts are written to `artifacts/`.
+## Quick smoke checklist
+
+- Permissions: toggle Camera/Microphone on and start a recording; verify system permission prompts appear.
+- Cancel flow: during countdown press Escape; during picker press Cancel; during recording press Escape to discard.
+- Notifications: after finishing a recording, confirm the system notification appears and actions work.

@@ -1,46 +1,105 @@
+import AppKit
 import SwiftUI
 
 struct MenuBarView: View {
-  @State private var isCameraEnabled = true
-  @State private var isMicrophoneEnabled = true
-  @State private var isSystemAudioEnabled = true
+  @EnvironmentObject private var appState: AppState
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("CaptureThis")
         .font(.headline)
 
-      Picker("Source", selection: .constant("Display")) {
-        Text("Display").tag("Display")
-        Text("Window").tag("Window")
-        Text("Application").tag("Application")
+      Picker("Source", selection: $appState.captureSource) {
+        ForEach(CaptureSource.allCases) { source in
+          Text(source.displayName).tag(source)
+        }
       }
       .pickerStyle(.segmented)
 
-      Toggle("Camera", isOn: $isCameraEnabled)
-      Toggle("Microphone", isOn: $isMicrophoneEnabled)
-      Toggle("System Audio", isOn: $isSystemAudioEnabled)
-
-      Button("Record") {
-        // Placeholder for recording start
+      Button(recordButtonTitle) {
+        appState.startOrStopRecording()
       }
       .keyboardShortcut(.defaultAction)
+      .disabled(isRecordButtonDisabled)
+
+      if let errorMessage = appState.errorMessage {
+        Text(errorMessage)
+          .font(.caption)
+          .foregroundStyle(.red)
+      }
 
       Divider()
 
-      Text("Recent Recordings")
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
+      HStack {
+        Text("Recent Recordings")
+          .font(.subheadline)
+          .foregroundStyle(.secondary)
+        Spacer()
+        SettingsLink {
+          Text("Settings")
+        }
+      }
 
-      Text("No recordings yet")
-        .font(.caption)
-        .foregroundStyle(.secondary)
+      if appState.recentRecordings.isEmpty {
+        Text("No recordings yet")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      } else {
+        ForEach(appState.recentRecordings) { recording in
+          HStack {
+            Text(recording.url.lastPathComponent)
+              .font(.caption)
+              .lineLimit(1)
+            Spacer()
+          }
+          .contextMenu {
+            Button("Open") {
+              NSWorkspace.shared.open(recording.url)
+            }
+            Button("Reveal in Finder") {
+              NSWorkspace.shared.activateFileViewerSelecting([recording.url])
+            }
+          }
+        }
+      }
+
+      Divider()
+
+      Button("Quit") {
+        NSApp.terminate(nil)
+      }
+      .keyboardShortcut("q")
     }
     .padding(12)
-    .frame(width: 300)
+    .frame(width: 320)
+  }
+
+  private var recordButtonTitle: String {
+    switch appState.recordingState {
+    case .recording:
+      "Stop"
+    case .countdown:
+      "Counting down…"
+    case .pickingSource:
+      "Picking source…"
+    case .stopping:
+      "Stopping…"
+    default:
+      "Record"
+    }
+  }
+
+  private var isRecordButtonDisabled: Bool {
+    switch appState.recordingState {
+    case .countdown, .pickingSource, .stopping:
+      true
+    default:
+      false
+    }
   }
 }
 
 #Preview {
   MenuBarView()
+    .environmentObject(AppState.shared)
 }

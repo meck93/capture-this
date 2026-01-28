@@ -4,6 +4,11 @@ options:
     macOS: "15.0"
   bundleIdPrefix: com.capturethis
 
+packages:
+  HotKey:
+    url: https://github.com/soffes/HotKey
+    from: 0.2.0
+
 settings:
   base:
     MARKETING_VERSION: 0.1.0
@@ -20,10 +25,17 @@ targets:
       - path: Resources
     info:
       path: Config/Info.plist
+      properties:
+        LSUIElement: true
+        NSCameraUsageDescription: CaptureThis uses the camera for picture-in-picture recording.
+        NSMicrophoneUsageDescription: CaptureThis uses the microphone to record your voice.
+        NSScreenCaptureUsageDescription: CaptureThis records your screen to create videos.
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThis
         CODE_SIGN_ENTITLEMENTS: Config/CaptureThis.entitlements
+    dependencies:
+      - package: HotKey
   CaptureThisTests:
     type: bundle.unit-test
     platform: macOS
