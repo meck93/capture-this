@@ -7,7 +7,12 @@ import SwiftUI
 final class AppState: ObservableObject {
   static let shared = AppState()
 
-  @Published var recordingState: RecordingState = .idle
+  @Published var recordingState: RecordingState = .idle {
+    didSet {
+      hotKeyService.setCancelHotKeyEnabled(recordingState.shouldEnableCancelHotKey)
+    }
+  }
+
   @Published var settings: RecordingSettings
   @Published var captureSource: CaptureSource = .display
   @Published var recentRecordings: [Recording]

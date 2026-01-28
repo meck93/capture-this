@@ -12,4 +12,13 @@ enum RecordingState: Equatable {
     if case .recording = self { return true }
     return false
   }
+
+  var shouldEnableCancelHotKey: Bool {
+    switch self {
+    case .countdown, .pickingSource, .recording, .stopping:
+      true
+    case .idle, .error:
+      false
+    }
+  }
 }
