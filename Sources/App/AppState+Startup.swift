@@ -5,11 +5,15 @@ extension AppState {
     Task { @MainActor in
       _ = permissionService.ensureScreenRecordingAccess()
       if settings.isCameraEnabled {
-        _ = await permissionService.requestCameraAccess()
+        let granted = await permissionService.requestCameraAccess()
+        if granted {
+          try? cameraService.startPreview()
+        }
       }
       if settings.isMicrophoneEnabled {
         _ = await permissionService.requestMicrophoneAccess()
       }
+      _ = try? await fileAccessService.ensureRecordingsDirectoryAccess()
       await notificationService.requestAuthorization()
     }
   }

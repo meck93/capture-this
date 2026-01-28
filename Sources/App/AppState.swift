@@ -96,8 +96,28 @@ final class AppState: ObservableObject {
   }
 
   func updateSettings(_ newSettings: RecordingSettings) {
+    let previous = settings
     settings = newSettings
     SettingsStore.save(newSettings)
+
+    if previous.isCameraEnabled != newSettings.isCameraEnabled {
+      if newSettings.isCameraEnabled {
+        Task { @MainActor in
+          let granted = await permissionService.requestCameraAccess()
+          if granted {
+            do {
+              try cameraService.startPreview()
+            } catch {
+              errorMessage = error.localizedDescription
+            }
+          } else {
+            errorMessage = AppError.permissionDenied.localizedDescription
+          }
+        }
+      } else {
+        cameraService.stopPreview()
+      }
+    }
   }
 
   func recordingDurationText(for date: Date) -> String {
