@@ -13,14 +13,15 @@ extension AppState: RecordingObserver {
       hudController.show()
     case .countdown:
       hudController.show()
-    case .recording:
-      hudController.show()
       if settings.isCameraEnabled {
         try? cameraService.startPreview()
       }
+    case .recording:
+      hudController.show()
       recordingStartDate = engine.currentRecordingStartDate
     case .idle:
       recordingStartDate = nil
+      cameraService.stopPreview()
     case .stopping:
       break
     case .error:

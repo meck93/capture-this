@@ -87,13 +87,7 @@ final class AppState: ObservableObject {
       if newSettings.isCameraEnabled {
         Task { @MainActor in
           let granted = await engine.permissionService.requestCameraAccess()
-          if granted {
-            do {
-              try cameraService.startPreview()
-            } catch {
-              errorMessage = error.localizedDescription
-            }
-          } else {
+          if !granted {
             errorMessage = AppError.permissionDenied.localizedDescription
           }
         }

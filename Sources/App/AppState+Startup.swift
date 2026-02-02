@@ -6,10 +6,7 @@ extension AppState {
     Task { @MainActor in
       _ = engine.permissionService.ensureScreenRecordingAccess()
       if settings.isCameraEnabled {
-        let granted = await engine.permissionService.requestCameraAccess()
-        if granted {
-          try? cameraService.startPreview()
-        }
+        _ = await engine.permissionService.requestCameraAccess()
       }
       if settings.isMicrophoneEnabled {
         _ = await engine.permissionService.requestMicrophoneAccess()
