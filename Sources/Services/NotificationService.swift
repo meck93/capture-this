@@ -1,4 +1,5 @@
 import AppKit
+import CaptureThisCore
 import Foundation
 import UserNotifications
 

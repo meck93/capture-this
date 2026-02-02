@@ -1,19 +1,21 @@
+import CaptureThisCore
 import Foundation
 
 extension AppState {
   func runStartupPermissions() {
     Task { @MainActor in
-      _ = permissionService.ensureScreenRecordingAccess()
+      _ = engine.permissionService.ensureScreenRecordingAccess()
       if settings.isCameraEnabled {
-        let granted = await permissionService.requestCameraAccess()
+        let granted = await engine.permissionService.requestCameraAccess()
         if granted {
           try? cameraService.startPreview()
         }
       }
       if settings.isMicrophoneEnabled {
-        _ = await permissionService.requestMicrophoneAccess()
+        _ = await engine.permissionService.requestMicrophoneAccess()
       }
-      _ = try? await fileAccessService.ensureRecordingsDirectoryAccess()
+      let fileAccess = FileAccessService()
+      _ = try? await fileAccess.ensureRecordingsDirectoryAccess()
       await notificationService.requestAuthorization()
     }
   }

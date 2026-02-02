@@ -1,4 +1,5 @@
 import AppKit
+import CaptureThisCore
 import Combine
 import SwiftUI
 

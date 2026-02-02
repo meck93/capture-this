@@ -1,15 +1,15 @@
 import Foundation
 
-enum CaptureSource: String, CaseIterable, Identifiable {
+public enum CaptureSource: String, CaseIterable, Identifiable, Sendable {
   case display
   case window
   case application
 
-  var id: String {
+  public var id: String {
     rawValue
   }
 
-  var displayName: String {
+  public var displayName: String {
     switch self {
     case .display:
       "Display"

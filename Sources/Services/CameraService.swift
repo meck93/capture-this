@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import CaptureThisCore
 
 @MainActor
 final class CameraService {

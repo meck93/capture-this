@@ -1,4 +1,5 @@
 import AppKit
+import CaptureThisCore
 import Foundation
 import ScreenCaptureKit
 import SwiftUI
@@ -14,96 +15,78 @@ final class AppState: ObservableObject {
   }
 
   @Published var settings: RecordingSettings
-  @Published var captureSource: CaptureSource = .display
+  @Published var captureSource: CaptureSource = .display {
+    didSet { engine.captureSource = captureSource }
+  }
+
   @Published var recentRecordings: [Recording]
   @Published var errorMessage: String?
   @Published var presenterOverlayEnabled = false
   @Published var recordingStartDate: Date?
 
-  let captureService = CaptureService()
-  let pickerService = PickerService()
-  let permissionService = PermissionService()
+  let engine: RecordingEngine
   let cameraService = CameraService()
-  let fileAccessService = FileAccessService()
-  let notificationService = NotificationService.shared
   let hotKeyService = HotKeyService()
+  let notificationService = NotificationService.shared
+
+  private let contentSelector: GUIContentSelector
+  private let directoryProvider: SandboxedDirectoryProvider
 
   lazy var hudController = HUDWindowController(appState: self)
 
-  var countdownTask: Task<Void, Never>?
-  var currentOutputURL: URL?
-  var pendingFilter: SCContentFilter?
-
   private init() {
-    settings = SettingsStore.load()
+    let loadedSettings = SettingsStore.load()
+    settings = loadedSettings
+
+    let selector = GUIContentSelector()
+    let dirProvider = SandboxedDirectoryProvider()
+    contentSelector = selector
+    directoryProvider = dirProvider
+
+    // Engine init needs observer; use temporary, reassign after init
+    engine = RecordingEngine(
+      contentSelector: selector,
+      directoryProvider: dirProvider,
+      observer: RecordingObserverStub(),
+      settings: loadedSettings
+    )
+
     recentRecordings = RecordingStore.load()
+    // Now set self as the real observer
+    engine.setObserver(self)
     configureHotKeys()
   }
 
   func startOrStopRecording() {
-    switch recordingState {
-    case .idle, .error:
-      startRecording()
-    case .recording:
-      stopRecording()
-    case .countdown, .pickingSource, .stopping:
-      break
-    }
+    engine.startOrStop()
   }
 
   func startRecording() {
-    switch recordingState {
-    case .idle, .error:
-      break
-    default:
-      return
-    }
-
-    errorMessage = nil
-    recordingState = .idle
-
-    Task { [weak self] in
-      await self?.prepareRecordingFlow()
-    }
+    engine.start()
   }
 
   func stopRecording() {
-    Task { [weak self] in
-      await self?.stopRecording(discard: false)
-    }
+    engine.stop()
   }
 
   func cancelRecording() {
-    switch recordingState {
-    case .countdown:
-      countdownTask?.cancel()
-      countdownTask = nil
-      pendingFilter = nil
-      recordingState = .idle
+    if case .pickingSource = recordingState {
       hudController.hide()
-    case .pickingSource:
-      pendingFilter = nil
-      pickerService.cancel()
-      recordingState = .idle
+    } else if case .countdown = recordingState {
       hudController.hide()
-    case .recording:
-      Task { [weak self] in
-        await self?.stopRecording(discard: true)
-      }
-    case .idle, .stopping, .error:
-      break
     }
+    engine.cancel()
   }
 
   func updateSettings(_ newSettings: RecordingSettings) {
     let previous = settings
     settings = newSettings
-    SettingsStore.save(newSettings)
+    engine.updateSettings(newSettings)
 
     if previous.isCameraEnabled != newSettings.isCameraEnabled {
       if newSettings.isCameraEnabled {
         Task { @MainActor in
-          let granted = await permissionService.requestCameraAccess()
+          let granted = await engine.permissionService.requestCameraAccess()
           if granted {
             do {
               try cameraService.startPreview()
@@ -121,7 +104,6 @@ final class AppState: ObservableObject {
   }
 
   func recordingDurationText(for date: Date) -> String {
-    let duration = Date().timeIntervalSince(date)
-    return duration.formattedClock
+    Date().timeIntervalSince(date).formattedClock
   }
 }

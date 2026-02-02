@@ -1,3 +1,4 @@
+import CaptureThisCore
 import SwiftUI
 
 struct RecordingHUDView: View {

@@ -35,6 +35,14 @@ run = "xcodebuild -scheme CaptureThis -configuration Release -derivedDataPath .b
 description = "Package .app.zip and .dmg"
 run = "Scripts/package.sh"
 
+[tasks.build-cli]
+description = "Build the CLI tool"
+run = "xcodebuild -scheme CaptureThisCLI -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"
+
+[tasks.test-core]
+description = "Run CaptureThisCore unit tests"
+run = "xcodebuild -scheme CaptureThisCore -configuration Debug -derivedDataPath .build -destination 'platform=macOS' test"
+
 [tasks.ci]
-description = "Generate project, lint, build, and test"
-run = ["mise run generate", "mise run lint", "mise run build", "mise run test"]
+description = "Generate project, lint, build all targets, run all tests"
+run = ["mise run generate", "mise run lint", "mise run build", "mise run build-cli", "mise run test", "mise run test-core"]

@@ -8,6 +8,9 @@ packages:
   HotKey:
     url: https://github.com/soffes/HotKey
     from: 0.2.0
+  swift-argument-parser:
+    url: https://github.com/apple/swift-argument-parser
+    from: 1.3.0
 
 settings:
   base:
@@ -15,12 +18,25 @@ settings:
     CURRENT_PROJECT_VERSION: 1
 
 targets:
+  CaptureThisCore:
+    type: framework
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Sources/Core
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisCore
+        GENERATE_INFOPLIST_FILE: YES
+
   CaptureThis:
     type: application
     platform: macOS
     deploymentTarget: "15.0"
     sources:
-      - path: Sources
+      - path: Sources/App
+      - path: Sources/Features
+      - path: Sources/Services
     resources:
       - path: Resources
     info:
@@ -35,13 +51,33 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThis
         CODE_SIGN_ENTITLEMENTS: Config/CaptureThis.entitlements
     dependencies:
+      - target: CaptureThisCore
       - package: HotKey
+
+  CaptureThisCLI:
+    type: tool
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Sources/CLI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisCLI
+        GENERATE_INFOPLIST_FILE: YES
+        LD_RUNPATH_SEARCH_PATHS: "@executable_path"
+    dependencies:
+      - target: CaptureThisCore
+        embed: true
+        codeSign: false
+      - package: swift-argument-parser
+        product: ArgumentParser
+
   CaptureThisTests:
     type: bundle.unit-test
     platform: macOS
     deploymentTarget: "15.0"
     sources:
-      - path: Tests
+      - path: Tests/CaptureThisTests.swift
     dependencies:
       - target: CaptureThis
     settings:
@@ -49,11 +85,39 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisTests
 
+  CaptureThisCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: Tests/CoreTests
+    dependencies:
+      - target: CaptureThisCore
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisCoreTests
+
 schemes:
   CaptureThis:
     build:
       targets:
         CaptureThis: all
+        CaptureThisCore: all
     test:
       targets:
         - CaptureThisTests
+
+  CaptureThisCore:
+    build:
+      targets:
+        CaptureThisCore: all
+    test:
+      targets:
+        - CaptureThisCoreTests
+
+  CaptureThisCLI:
+    build:
+      targets:
+        CaptureThisCLI: all
+        CaptureThisCore: all

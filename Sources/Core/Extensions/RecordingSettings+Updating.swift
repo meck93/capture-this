@@ -1,6 +1,6 @@
 import Foundation
 
-extension RecordingSettings {
+public extension RecordingSettings {
   func updating(
     countdownSeconds: Int? = nil,
     cameraEnabled: Bool? = nil,

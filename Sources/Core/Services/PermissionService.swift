@@ -2,15 +2,17 @@ import AVFoundation
 import CoreGraphics
 import Foundation
 
-final class PermissionService {
-  func ensureScreenRecordingAccess() -> Bool {
+public final class PermissionService {
+  public init() {}
+
+  public func ensureScreenRecordingAccess() -> Bool {
     if CGPreflightScreenCaptureAccess() {
       return true
     }
     return CGRequestScreenCaptureAccess()
   }
 
-  func requestCameraAccess() async -> Bool {
+  public func requestCameraAccess() async -> Bool {
     await withCheckedContinuation { continuation in
       AVCaptureDevice.requestAccess(for: .video) { granted in
         continuation.resume(returning: granted)
@@ -18,7 +20,7 @@ final class PermissionService {
     }
   }
 
-  func requestMicrophoneAccess() async -> Bool {
+  public func requestMicrophoneAccess() async -> Bool {
     await withCheckedContinuation { continuation in
       AVCaptureDevice.requestAccess(for: .audio) { granted in
         continuation.resume(returning: granted)

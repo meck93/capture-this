@@ -1,3 +1,4 @@
+import CaptureThisCore
 import ScreenCaptureKit
 
 final class PickerService: NSObject {

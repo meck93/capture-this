@@ -2,17 +2,27 @@ import AVFoundation
 import Foundation
 import ScreenCaptureKit
 
-struct CaptureRecordingOptions {
-  let preferredFileType: AVFileType?
-  let preferredVideoCodec: AVVideoCodecType?
+public struct CaptureRecordingOptions: Sendable {
+  public let preferredFileType: AVFileType?
+  public let preferredVideoCodec: AVVideoCodecType?
+
+  public init(preferredFileType: AVFileType?, preferredVideoCodec: AVVideoCodecType?) {
+    self.preferredFileType = preferredFileType
+    self.preferredVideoCodec = preferredVideoCodec
+  }
 }
 
-struct CaptureRecordingHandlers {
-  let presenterOverlay: (Bool) -> Void
-  let error: (Error) -> Void
+public struct CaptureRecordingHandlers {
+  public let presenterOverlay: (Bool) -> Void
+  public let error: (Error) -> Void
+
+  public init(presenterOverlay: @escaping (Bool) -> Void, error: @escaping (Error) -> Void) {
+    self.presenterOverlay = presenterOverlay
+    self.error = error
+  }
 }
 
-final class CaptureService: NSObject {
+public final class CaptureService: NSObject {
   private var stream: SCStream?
   private var recordingOutput: SCRecordingOutput?
   private var outputURL: URL?
@@ -22,7 +32,11 @@ final class CaptureService: NSObject {
   private let sampleOutput = SampleStreamOutput()
   private let sampleQueue = DispatchQueue(label: "CaptureThis.SampleOutput")
 
-  func startRecording(
+  override public init() {
+    super.init()
+  }
+
+  public func startRecording(
     filter: SCContentFilter,
     configuration: SCStreamConfiguration,
     outputURL: URL,
@@ -73,7 +87,7 @@ final class CaptureService: NSObject {
     self.recordingOutput = recordingOutput
   }
 
-  func stopRecording() async throws -> URL {
+  public func stopRecording() async throws -> URL {
     guard let stream, let recordingOutput else {
       throw AppError.captureFailed
     }
@@ -105,7 +119,7 @@ final class CaptureService: NSObject {
 }
 
 extension CaptureService: SCStreamDelegate {
-  func stream(_: SCStream, didStopWithError error: Error) {
+  public func stream(_: SCStream, didStopWithError error: Error) {
     let hadContinuation = finishContinuation != nil
     finishContinuation?.resume(throwing: error)
     finishContinuation = nil
@@ -117,13 +131,13 @@ extension CaptureService: SCStreamDelegate {
     outputURL = nil
   }
 
-  func stream(_: SCStream, outputEffectDidStart didStart: Bool) {
+  public func stream(_: SCStream, outputEffectDidStart didStart: Bool) {
     presenterOverlayHandler?(didStart)
   }
 }
 
 extension CaptureService: SCRecordingOutputDelegate {
-  func recordingOutputDidFinishRecording(_: SCRecordingOutput) {
+  public func recordingOutputDidFinishRecording(_: SCRecordingOutput) {
     if let outputURL {
       finishContinuation?.resume(returning: outputURL)
       finishContinuation = nil
@@ -133,7 +147,7 @@ extension CaptureService: SCRecordingOutputDelegate {
     }
   }
 
-  func recordingOutput(_: SCRecordingOutput, didFailWithError error: Error) {
+  public func recordingOutput(_: SCRecordingOutput, didFailWithError error: Error) {
     let hadContinuation = finishContinuation != nil
     finishContinuation?.resume(throwing: error)
     finishContinuation = nil
@@ -195,7 +209,5 @@ private final class SampleStreamOutput: NSObject, SCStreamOutput {
     _: SCStream,
     didOutputSampleBuffer _: CMSampleBuffer,
     of _: SCStreamOutputType
-  ) {
-    // Intentionally discard samples; keeps the stream outputs attached.
-  }
+  ) {}
 }

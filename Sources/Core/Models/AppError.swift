@@ -1,13 +1,13 @@
 import Foundation
 
-enum AppError: LocalizedError {
+public enum AppError: LocalizedError {
   case permissionDenied
   case captureFailed
   case fileWriteFailed
   case invalidSaveLocation
   case screenRecordingDenied
 
-  var errorDescription: String? {
+  public var errorDescription: String? {
     switch self {
     case .permissionDenied:
       "Required permission was denied."

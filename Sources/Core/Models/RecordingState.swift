@@ -1,6 +1,6 @@
 import Foundation
 
-enum RecordingState: Equatable {
+public enum RecordingState: Equatable, Sendable {
   case idle
   case countdown(Int)
   case pickingSource
@@ -8,12 +8,12 @@ enum RecordingState: Equatable {
   case stopping
   case error(String)
 
-  var isRecording: Bool {
+  public var isRecording: Bool {
     if case .recording = self { return true }
     return false
   }
 
-  var shouldEnableCancelHotKey: Bool {
+  public var shouldEnableCancelHotKey: Bool {
     switch self {
     case .countdown, .pickingSource, .recording, .stopping:
       true

@@ -1,6 +1,6 @@
 import Foundation
 
-extension TimeInterval {
+public extension TimeInterval {
   var formattedClock: String {
     let totalSeconds = Int(self)
     let minutes = totalSeconds / 60
