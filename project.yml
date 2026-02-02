@@ -44,7 +44,6 @@ targets:
     info:
       path: Config/Info.plist
       properties:
-        LSUIElement: true
         NSCameraUsageDescription: CaptureThis uses the camera for picture-in-picture recording.
         NSMicrophoneUsageDescription: CaptureThis uses the microphone to record your voice.
         NSScreenCaptureUsageDescription: CaptureThis records your screen to create videos.

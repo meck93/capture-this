@@ -35,6 +35,14 @@ run = "xcodebuild -scheme CaptureThis -configuration Release -derivedDataPath .b
 description = "Package .app.zip and .dmg"
 run = "Scripts/package.sh"
 
+[tasks.install]
+description = "Build and install the app to /Applications"
+run = ["mise run build", "cp -R .build/Build/Products/Debug/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
+
+[tasks.reinstall]
+description = "Rebuild and reinstall the app to /Applications"
+run = ["mise run build", "rm -rf /Applications/CaptureThis.app", "cp -R .build/Build/Products/Debug/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
+
 [tasks.build-cli]
 description = "Build the CLI tool"
 run = "xcodebuild -scheme CaptureThisCLI -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"

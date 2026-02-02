@@ -18,8 +18,6 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
-	<key>LSUIElement</key>
-	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>CaptureThis uses the camera for picture-in-picture recording.</string>
 	<key>NSMicrophoneUsageDescription</key>
