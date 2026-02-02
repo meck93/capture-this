@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
   private let popover = NSPopover()
   private var cancellables = Set<AnyCancellable>()
   private var windowObserver: Any?
+  private var clickMonitor: Any?
 
   func applicationDidFinishLaunching(_: Notification) {
     AppDelegate.shared = self
@@ -57,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   @objc func togglePopover(_ sender: AnyObject?) {
     if popover.isShown {
-      popover.performClose(sender)
+      closePopover()
     } else {
       showPopover()
     }
@@ -68,6 +69,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
     DispatchQueue.main.async { [weak self] in
       self?.popover.contentViewController?.view.window?.sharingType = .none
+    }
+    clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
+      self?.closePopover()
+    }
+  }
+
+  private func closePopover() {
+    popover.performClose(nil)
+    if let monitor = clickMonitor {
+      NSEvent.removeMonitor(monitor)
+      clickMonitor = nil
     }
   }
 
