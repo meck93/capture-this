@@ -10,6 +10,7 @@ struct CaptureThisApp: App {
     Settings {
       SettingsView()
         .environmentObject(appState)
+        .onAppear { NSApp.activate(ignoringOtherApps: true) }
     }
   }
 }
