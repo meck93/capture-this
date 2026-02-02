@@ -1,7 +1,7 @@
 name: CaptureThis
 options:
   deploymentTarget:
-    macOS: "15.0"
+    macOS: "15.2"
   bundleIdPrefix: com.capturethis
 
 packages:
@@ -23,7 +23,7 @@ targets:
   CaptureThisCore:
     type: framework
     platform: macOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "15.2"
     sources:
       - path: Sources/Core
     settings:
@@ -34,7 +34,7 @@ targets:
   CaptureThis:
     type: application
     platform: macOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "15.2"
     sources:
       - path: Sources/App
       - path: Sources/Features
@@ -59,7 +59,7 @@ targets:
   CaptureThisCLI:
     type: tool
     platform: macOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "15.2"
     sources:
       - path: Sources/CLI
     settings:
@@ -77,7 +77,7 @@ targets:
   CaptureThisTests:
     type: bundle.unit-test
     platform: macOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "15.2"
     sources:
       - path: Tests/CaptureThisTests.swift
     dependencies:
@@ -90,7 +90,7 @@ targets:
   CaptureThisCoreTests:
     type: bundle.unit-test
     platform: macOS
-    deploymentTarget: "15.0"
+    deploymentTarget: "15.2"
     sources:
       - path: Tests/CoreTests
     dependencies:

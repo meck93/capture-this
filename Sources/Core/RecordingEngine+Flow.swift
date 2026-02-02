@@ -60,6 +60,7 @@ extension RecordingEngine {
     do {
       try await ensurePermissions()
 
+      let resolvedFilter = await augmentedFilterIfNeeded(from: filter)
       let directory = try await directoryProvider.recordingsDirectory()
       let outputURL = makeOutputURL(in: directory)
       currentOutputURL = outputURL
@@ -79,7 +80,7 @@ extension RecordingEngine {
       )
 
       try await captureService.startRecording(
-        filter: filter,
+        filter: resolvedFilter,
         configuration: config,
         outputURL: outputURL,
         options: options,
@@ -90,6 +91,33 @@ extension RecordingEngine {
       setState(.recording(isPaused: false))
     } catch {
       await reportError(error)
+    }
+  }
+
+  private func augmentedFilterIfNeeded(from filter: SCContentFilter) async -> SCContentFilter {
+    guard captureSource == .application else { return filter }
+    guard let bundleIdentifier = Bundle.main.bundleIdentifier else { return filter }
+
+    let currentApplications = filter.includedApplications
+    if currentApplications.contains(where: { $0.bundleIdentifier == bundleIdentifier }) {
+      return filter
+    }
+
+    do {
+      let content = try await SCShareableContent.current
+      guard let captureApp = content.applications.first(where: { $0.bundleIdentifier == bundleIdentifier }) else {
+        return filter
+      }
+
+      guard let display = filter.includedDisplays.first ?? content.displays.first else {
+        return filter
+      }
+
+      var updatedApplications = currentApplications
+      updatedApplications.append(captureApp)
+      return SCContentFilter(display: display, including: updatedApplications, exceptingWindows: [])
+    } catch {
+      return filter
     }
   }
 
