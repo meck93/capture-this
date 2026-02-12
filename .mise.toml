@@ -39,6 +39,10 @@ run = "Scripts/package.sh"
 description = "Build and install the app to /Applications"
 run = ["mise run build", "cp -R .build/Build/Products/Debug/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
 
+[tasks.install-release]
+description = "Build release and install the app to /Applications"
+run = ["mise run release-build", "cp -R .build/Build/Products/Release/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
+
 [tasks.reinstall]
 description = "Rebuild and reinstall the app to /Applications"
 run = ["mise run build", "rm -rf /Applications/CaptureThis.app", "cp -R .build/Build/Products/Debug/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
