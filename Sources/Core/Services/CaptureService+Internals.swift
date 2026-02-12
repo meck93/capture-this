@@ -66,7 +66,7 @@ extension CaptureService {
   }
 
   func recordingOutputDidFail(_ error: Error) {
-    let (continuations, fallbackHandler) = withStateLock { () -> (CaptureContinuations, ((Error) -> Void)?) in
+    let (continuations, fallbackHandler) = withStateLock { () -> (Continuations, ((Error) -> Void)?) in
       let continuations = drainContinuationsLocked()
       let handler = continuations.hasActive ? nil : errorHandler
       phase = .idle
@@ -87,7 +87,7 @@ extension CaptureService {
   }
 
   func handleRecordingOutputDidFinish() {
-    let action: CaptureCompletionAction = withStateLock {
+    let action: CompletionAction = withStateLock {
       finalizeActiveSegmentLocked()
 
       if let pauseContinuation {
@@ -122,7 +122,7 @@ extension CaptureService {
   }
 
   func handleStreamDidStop(with error: Error) {
-    let (continuations, fallbackHandler) = withStateLock { () -> (CaptureContinuations, ((Error) -> Void)?) in
+    let (continuations, fallbackHandler) = withStateLock { () -> (Continuations, ((Error) -> Void)?) in
       let continuations = drainContinuationsLocked()
       let handler = continuations.hasActive ? nil : errorHandler
       stream = nil
@@ -200,8 +200,8 @@ extension CaptureService {
     activeSegmentURL = nil
   }
 
-  func drainContinuationsLocked() -> CaptureContinuations {
-    let continuations = CaptureContinuations(
+  func drainContinuationsLocked() -> Continuations {
+    let continuations = Continuations(
       pause: pauseContinuation,
       finish: finishContinuation,
       discard: discardContinuation
@@ -212,7 +212,7 @@ extension CaptureService {
     return continuations
   }
 
-  func resume(continuations: CaptureContinuations, throwing error: Error) {
+  func resume(continuations: Continuations, throwing error: Error) {
     continuations.pause?.resume(throwing: error)
     continuations.finish?.resume(throwing: error)
     continuations.discard?.resume(throwing: error)

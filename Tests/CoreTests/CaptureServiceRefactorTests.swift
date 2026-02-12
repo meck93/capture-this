@@ -39,6 +39,88 @@ final class CaptureServiceRefactorTests: XCTestCase {
     XCTAssertEqual(service.phaseForTesting(), "paused")
   }
 
+  func testStopRecordingWaitsForPauseTransitionThenStops() async throws {
+    let stream = MockCaptureStream()
+    let service = makeService(stream: stream)
+    let folder = makeTemporaryDirectory()
+    let finalURL = folder.appendingPathComponent("final-stop.mp4")
+    let activeSegmentURL = folder.appendingPathComponent("segment-stop.mp4")
+    try Data(repeating: 7, count: 16).write(to: activeSegmentURL)
+
+    service.installTestSession(
+      stream: stream,
+      recordingOutput: MockRecordingOutput(),
+      baseOutputURL: finalURL,
+      outputFileType: .mp4,
+      activeSegmentURL: activeSegmentURL,
+      paused: false
+    )
+
+    let pauseTask = Task {
+      try await service.pauseRecording()
+    }
+
+    await waitUntil { stream.removeRecordingOutputCallCount == 1 }
+
+    let stopTask = Task {
+      try await service.stopRecording()
+    }
+
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(stream.stopCaptureCallCount, 0)
+    XCTAssertEqual(service.phaseForTesting(), "pausing")
+
+    service.handleRecordingOutputDidFinish()
+
+    try await pauseTask.value
+    let stoppedURL = try await stopTask.value
+    XCTAssertEqual(stoppedURL.standardizedFileURL, finalURL.standardizedFileURL)
+    XCTAssertEqual(stream.stopCaptureCallCount, 1)
+    XCTAssertEqual(service.phaseForTesting(), "idle")
+    XCTAssertTrue(FileManager.default.fileExists(atPath: finalURL.path))
+  }
+
+  func testDiscardRecordingWaitsForPauseTransitionThenTearsDown() async throws {
+    let stream = MockCaptureStream()
+    let service = makeService(stream: stream)
+    let folder = makeTemporaryDirectory()
+    let finalURL = folder.appendingPathComponent("final-discard.mp4")
+    let activeSegmentURL = folder.appendingPathComponent("segment-discard.mp4")
+    try Data(repeating: 3, count: 32).write(to: activeSegmentURL)
+
+    service.installTestSession(
+      stream: stream,
+      recordingOutput: MockRecordingOutput(),
+      baseOutputURL: finalURL,
+      outputFileType: .mp4,
+      activeSegmentURL: activeSegmentURL,
+      paused: false
+    )
+
+    let pauseTask = Task {
+      try await service.pauseRecording()
+    }
+
+    await waitUntil { stream.removeRecordingOutputCallCount == 1 }
+
+    let discardTask = Task {
+      await service.discardRecording()
+    }
+
+    try await Task.sleep(nanoseconds: 50_000_000)
+    XCTAssertEqual(stream.stopCaptureCallCount, 0)
+    XCTAssertEqual(service.phaseForTesting(), "pausing")
+
+    service.handleRecordingOutputDidFinish()
+
+    try await pauseTask.value
+    await discardTask.value
+
+    XCTAssertEqual(stream.stopCaptureCallCount, 1)
+    XCTAssertEqual(service.phaseForTesting(), "idle")
+    XCTAssertFalse(FileManager.default.fileExists(atPath: activeSegmentURL.path))
+  }
+
   func testResumeRecordingFailureRollsBackPhaseAndSegmentIndex() {
     let stream = MockCaptureStream()
     stream.addRecordingOutputError = AppError.captureFailed

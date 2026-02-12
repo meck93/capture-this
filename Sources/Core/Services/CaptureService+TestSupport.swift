@@ -11,6 +11,7 @@ import Foundation
       videoCodec: AVVideoCodecType = .h264,
       segmentURLs: [URL] = [],
       segmentIndex: Int = 0,
+      activeSegmentURL: URL? = nil,
       paused: Bool
     ) {
       withStateLock {
@@ -22,7 +23,7 @@ import Foundation
         self.segmentURLs = segmentURLs
         self.segmentIndex = segmentIndex
         phase = paused ? .paused : .recording
-        activeSegmentURL = nil
+        self.activeSegmentURL = activeSegmentURL
       }
     }
 

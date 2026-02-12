@@ -2,51 +2,51 @@ import AVFoundation
 import Foundation
 import ScreenCaptureKit
 
-enum CaptureSessionPhase: String {
-  case idle
-  case recording
-  case pausing
-  case paused
-  case resuming
-  case stopping
-  case discarding
-}
-
-struct CaptureContinuations {
-  var pause: CheckedContinuation<Void, Error>?
-  var finish: CheckedContinuation<Void, Error>?
-  var discard: CheckedContinuation<Void, Error>?
-
-  var hasActive: Bool {
-    pause != nil || finish != nil || discard != nil
-  }
-}
-
-enum CaptureCompletionAction {
-  case pause(CheckedContinuation<Void, Error>)
-  case stop(CheckedContinuation<Void, Error>)
-  case discard(CheckedContinuation<Void, Error>)
-  case none
-}
-
-enum CaptureStopMode {
-  case finalize(any CaptureStreamControlling, any CaptureRecordingOutputControlling)
-  case stitchOnly
-}
-
-enum CaptureDiscardMode {
-  case finalize(any CaptureStreamControlling, any CaptureRecordingOutputControlling)
-  case stopOnly
-  case noOp
-}
-
-struct CaptureStitchInput {
-  let baseOutputURL: URL
-  let outputFileType: AVFileType
-  let segments: [URL]
-}
-
 public final class CaptureService: NSObject {
+  enum SessionPhase: String {
+    case idle
+    case recording
+    case pausing
+    case paused
+    case resuming
+    case stopping
+    case discarding
+  }
+
+  struct Continuations {
+    var pause: CheckedContinuation<Void, Error>?
+    var finish: CheckedContinuation<Void, Error>?
+    var discard: CheckedContinuation<Void, Error>?
+
+    var hasActive: Bool {
+      pause != nil || finish != nil || discard != nil
+    }
+  }
+
+  enum CompletionAction {
+    case pause(CheckedContinuation<Void, Error>)
+    case stop(CheckedContinuation<Void, Error>)
+    case discard(CheckedContinuation<Void, Error>)
+    case none
+  }
+
+  enum StopMode {
+    case finalize(any CaptureStreamControlling, any CaptureRecordingOutputControlling)
+    case stitchOnly
+  }
+
+  enum DiscardMode {
+    case finalize(any CaptureStreamControlling, any CaptureRecordingOutputControlling)
+    case stopOnly
+    case noOp
+  }
+
+  struct StitchInput {
+    let baseOutputURL: URL
+    let outputFileType: AVFileType
+    let segments: [URL]
+  }
+
   var stream: (any CaptureStreamControlling)?
   var recordingOutput: (any CaptureRecordingOutputControlling)?
   var activeSegmentURL: URL?
@@ -58,7 +58,7 @@ public final class CaptureService: NSObject {
   var resolvedOutputFileType: AVFileType?
   var resolvedVideoCodec: AVVideoCodecType?
 
-  var phase: CaptureSessionPhase = .idle
+  var phase: SessionPhase = .idle
   var finishContinuation: CheckedContinuation<Void, Error>?
   var pauseContinuation: CheckedContinuation<Void, Error>?
   var discardContinuation: CheckedContinuation<Void, Error>?

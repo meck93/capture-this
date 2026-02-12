@@ -121,6 +121,11 @@ extension CaptureService: CaptureServicing {
   }
 
   public func stopRecording() async throws -> URL {
+    guard await waitForOutputTransitionToSettle() else {
+      try? await stopAndReset(clearSegmentState: false)
+      throw AppError.captureFailed
+    }
+
     let mode = try resolveStopMode()
     try await finalizeStopIfNeeded(mode)
 
@@ -140,6 +145,11 @@ extension CaptureService: CaptureServicing {
   }
 
   public func discardRecording() async {
+    guard await waitForOutputTransitionToSettle() else {
+      try? await stopAndReset()
+      return
+    }
+
     let mode = resolveDiscardMode()
     guard case .noOp = mode else {
       await finalizeDiscardIfNeeded(mode)
@@ -194,7 +204,26 @@ extension CaptureService: CaptureServicing {
 }
 
 extension CaptureService {
-  func resolveStopMode() throws -> CaptureStopMode {
+  func waitForOutputTransitionToSettle(
+    maxPollCount: Int = 100,
+    pollIntervalNanoseconds: UInt64 = 10_000_000
+  ) async -> Bool {
+    for _ in 0 ..< maxPollCount {
+      let inTransition = withStateLock {
+        phase == .pausing || phase == .resuming
+      }
+      if !inTransition {
+        return true
+      }
+      try? await Task.sleep(nanoseconds: pollIntervalNanoseconds)
+    }
+
+    return withStateLock {
+      phase != .pausing && phase != .resuming
+    }
+  }
+
+  func resolveStopMode() throws -> StopMode {
     try withStateLock {
       switch phase {
       case .recording:
@@ -217,7 +246,7 @@ extension CaptureService {
     }
   }
 
-  func finalizeStopIfNeeded(_ mode: CaptureStopMode) async throws {
+  func finalizeStopIfNeeded(_ mode: StopMode) async throws {
     guard case let .finalize(activeStream, activeOutput) = mode else {
       return
     }
@@ -239,7 +268,7 @@ extension CaptureService {
     }
   }
 
-  func stopStitchInput() throws -> CaptureStitchInput {
+  func stopStitchInput() throws -> StitchInput {
     try withStateLock {
       guard let baseOutputURL,
             let outputFileType = resolvedOutputFileType
@@ -247,7 +276,7 @@ extension CaptureService {
         throw AppError.captureFailed
       }
 
-      return CaptureStitchInput(
+      return StitchInput(
         baseOutputURL: baseOutputURL,
         outputFileType: outputFileType,
         segments: segmentURLs
@@ -255,7 +284,7 @@ extension CaptureService {
     }
   }
 
-  func resolveDiscardMode() -> CaptureDiscardMode {
+  func resolveDiscardMode() -> DiscardMode {
     withStateLock {
       switch phase {
       case .recording:
@@ -278,7 +307,7 @@ extension CaptureService {
     }
   }
 
-  func finalizeDiscardIfNeeded(_ mode: CaptureDiscardMode) async {
+  func finalizeDiscardIfNeeded(_ mode: DiscardMode) async {
     guard case let .finalize(activeStream, activeOutput) = mode else {
       return
     }
