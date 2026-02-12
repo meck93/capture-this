@@ -2,6 +2,43 @@ import Foundation
 import ScreenCaptureKit
 
 extension RecordingEngine {
+  func pause() async {
+    guard case .recording(false) = state else {
+      isPauseResumeTransitioning = false
+      return
+    }
+
+    defer { isPauseResumeTransitioning = false }
+
+    do {
+      try await captureService.pauseRecording()
+      lastPauseDate = nowProvider()
+      setState(.recording(isPaused: true))
+    } catch {
+      await reportError(error)
+    }
+  }
+
+  func resume() async {
+    guard case .recording(true) = state else {
+      isPauseResumeTransitioning = false
+      return
+    }
+
+    defer { isPauseResumeTransitioning = false }
+
+    do {
+      try captureService.resumeRecording()
+      if let lastPauseDate {
+        pausedDuration += nowProvider().timeIntervalSince(lastPauseDate)
+      }
+      lastPauseDate = nil
+      setState(.recording(isPaused: false))
+    } catch {
+      await reportError(error)
+    }
+  }
+
   func prepareRecordingFlow() async {
     do {
       try await ensurePermissions()
@@ -87,7 +124,10 @@ extension RecordingEngine {
         handlers: handlers
       )
 
-      recordingStartDate = Date()
+      recordingStartDate = nowProvider()
+      pausedDuration = 0
+      lastPauseDate = nil
+      isPauseResumeTransitioning = false
       setState(.recording(isPaused: false))
     } catch {
       await reportError(error)
@@ -124,17 +164,17 @@ extension RecordingEngine {
   func stopRecording(discard: Bool) async {
     guard state.isRecording || state == .stopping else { return }
     setState(.stopping)
+    isPauseResumeTransitioning = false
 
     do {
-      let outputURL = try await captureService.stopRecording()
       directoryProvider.stopAccessing()
-
       if discard {
-        try? FileManager.default.removeItem(at: outputURL)
+        await captureService.discardRecording()
         setState(.idle)
         return
       }
 
+      let outputURL = try await captureService.stopRecording()
       let recording = makeRecording(outputURL: outputURL)
       let updated = RecordingStore.add(recording, to: RecordingStore.load())
       RecordingStore.save(updated)
@@ -144,7 +184,17 @@ extension RecordingEngine {
       }
       setState(.idle)
     } catch {
-      if recoverRecordingIfPossible(from: error) {
+      if let recoveredURL = await captureService.recoverPartialRecording() {
+        let recording = makeRecording(outputURL: recoveredURL)
+        let updated = RecordingStore.add(recording, to: RecordingStore.load())
+        RecordingStore.save(updated)
+
+        await MainActor.run { [weak self, recording] in
+          self?.observer?.engineDidFinishRecording(recording)
+        }
+
+        setState(.idle)
+        directoryProvider.stopAccessing()
         return
       }
       await reportError(error)
@@ -176,32 +226,7 @@ extension RecordingEngine {
 
     setState(.error(message))
     directoryProvider.stopAccessing()
-  }
-
-  func recoverRecordingIfPossible(from error: Error) -> Bool {
-    let nsError = error as NSError
-    let isConnectionError = nsError.domain == "com.apple.ReplayKit.RPRecordingErrorDomain"
-      && (nsError.code == -5814 || nsError.code == -5815)
-
-    guard isConnectionError, let outputURL = currentOutputURL else {
-      return false
-    }
-
-    let attributes = try? FileManager.default.attributesOfItem(atPath: outputURL.path)
-    guard let fileSize = attributes?[.size] as? NSNumber, fileSize.intValue > 0 else {
-      return false
-    }
-
-    let recording = makeRecording(outputURL: outputURL)
-    let updated = RecordingStore.add(recording, to: RecordingStore.load())
-    RecordingStore.save(updated)
-
-    Task { @MainActor [weak self, recording] in
-      self?.observer?.engineDidFinishRecording(recording)
-    }
-
-    setState(.idle)
-    directoryProvider.stopAccessing()
-    return true
+    isPauseResumeTransitioning = false
+    lastPauseDate = nil
   }
 }

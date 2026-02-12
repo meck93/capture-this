@@ -14,8 +14,8 @@ final class CLIObserver: RecordingObserver {
       FileHandle.standardError.write("countdown: \(remaining)\n")
     case .pickingSource:
       FileHandle.standardError.write("selecting content...\n")
-    case .recording:
-      FileHandle.standardError.write("recording...\n")
+    case let .recording(isPaused):
+      FileHandle.standardError.write(isPaused ? "paused\n" : "recording...\n")
     case .stopping:
       FileHandle.standardError.write("stopping...\n")
     case let .error(msg):

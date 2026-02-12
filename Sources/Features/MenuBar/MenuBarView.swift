@@ -23,6 +23,12 @@ struct MenuBarView: View {
       .keyboardShortcut(.defaultAction)
       .disabled(isRecordButtonDisabled)
 
+      if case let .recording(isPaused) = appState.recordingState {
+        Button(isPaused ? "Resume" : "Pause") {
+          appState.togglePauseResume()
+        }
+      }
+
       if let errorMessage = appState.errorMessage {
         Text(errorMessage)
           .font(.caption)
@@ -77,7 +83,9 @@ struct MenuBarView: View {
 
   private var recordButtonTitle: String {
     switch appState.recordingState {
-    case .recording:
+    case .recording(true):
+      "Paused"
+    case .recording(false):
       "Stop"
     case .countdown:
       "Counting down…"

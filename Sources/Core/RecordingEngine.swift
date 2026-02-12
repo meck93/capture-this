@@ -7,8 +7,8 @@ public final class RecordingEngine {
   public var settings: RecordingSettings
   public var captureSource: CaptureSource = .display
 
-  public let captureService: CaptureService
-  public let permissionService: PermissionService
+  public let captureService: any CaptureServicing
+  public let permissionService: any PermissionServicing
 
   let contentSelector: ContentSelector
   let directoryProvider: OutputDirectoryProvider
@@ -18,19 +18,27 @@ public final class RecordingEngine {
   var currentOutputURL: URL?
   var recordingStartDate: Date?
   var pendingFilter: SCContentFilter?
+  var pausedDuration: TimeInterval = 0
+  var lastPauseDate: Date?
+  var isPauseResumeTransitioning = false
+  let nowProvider: () -> Date
 
   public init(
     contentSelector: ContentSelector,
     directoryProvider: OutputDirectoryProvider,
     observer: RecordingObserver,
-    settings: RecordingSettings = SettingsStore.load()
+    settings: RecordingSettings = SettingsStore.load(),
+    captureService: any CaptureServicing = CaptureService(),
+    permissionService: any PermissionServicing = PermissionService(),
+    nowProvider: @escaping () -> Date = Date.init
   ) {
     self.contentSelector = contentSelector
     self.directoryProvider = directoryProvider
     self.observer = observer
     self.settings = settings
-    captureService = CaptureService()
-    permissionService = PermissionService()
+    self.captureService = captureService
+    self.permissionService = permissionService
+    self.nowProvider = nowProvider
   }
 
   public func setObserver(_ observer: RecordingObserver) {
@@ -71,6 +79,20 @@ public final class RecordingEngine {
     }
   }
 
+  public func pauseResume() {
+    guard case let .recording(isPaused) = state else { return }
+    guard !isPauseResumeTransitioning else { return }
+
+    isPauseResumeTransitioning = true
+    Task { [weak self] in
+      if isPaused {
+        await self?.resume()
+      } else {
+        await self?.pause()
+      }
+    }
+  }
+
   public func cancel() {
     switch state {
     case .countdown:
@@ -99,7 +121,7 @@ public final class RecordingEngine {
   }
 
   public func recordingDuration(since date: Date) -> String {
-    Date().timeIntervalSince(date).formattedClock
+    effectiveDuration(since: date).formattedClock
   }
 
   public var currentRecordingStartDate: Date? {
@@ -169,13 +191,24 @@ public final class RecordingEngine {
   }
 
   func makeRecording(outputURL: URL) -> Recording {
-    let createdAt = recordingStartDate ?? Date()
-    let duration = Date().timeIntervalSince(createdAt)
+    let createdAt = recordingStartDate ?? nowProvider()
+    let duration = effectiveDuration(since: createdAt)
     let captureType: Recording.CaptureType = switch captureSource {
     case .display: .display
     case .window: .window
     case .application: .application
     }
     return Recording(id: UUID(), url: outputURL, createdAt: createdAt, duration: duration, captureType: captureType)
+  }
+
+  func effectiveDuration(since date: Date) -> TimeInterval {
+    let now = nowProvider()
+    var duration = now.timeIntervalSince(date) - pausedDuration
+
+    if case .recording(true) = state, let lastPauseDate {
+      duration -= now.timeIntervalSince(lastPauseDate)
+    }
+
+    return max(duration, 0)
   }
 }

@@ -98,6 +98,6 @@ final class AppState: ObservableObject {
   }
 
   func recordingDurationText(for date: Date) -> String {
-    Date().timeIntervalSince(date).formattedClock
+    engine.recordingDuration(since: date)
   }
 }
