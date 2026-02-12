@@ -69,6 +69,34 @@ final class RecordingEnginePauseResumeTests: XCTestCase {
     XCTAssertEqual(engine.recordingDuration(since: start), "00:10")
   }
 
+  func testRecordingDurationAccumulatesAcrossMultiplePauseResumeCycles() async {
+    var currentTime = Date(timeIntervalSince1970: 500)
+    let captureService = MockCaptureService()
+    let engine = makeEngine(captureService: captureService, nowProvider: { currentTime })
+
+    engine.recordingStartDate = currentTime
+    engine.setState(.recording(isPaused: false))
+
+    currentTime = currentTime.addingTimeInterval(5)
+    engine.pauseResume()
+    await waitUntil { engine.state == .recording(isPaused: true) }
+
+    currentTime = currentTime.addingTimeInterval(3)
+    engine.pauseResume()
+    await waitUntil { engine.state == .recording(isPaused: false) }
+
+    currentTime = currentTime.addingTimeInterval(4)
+    engine.pauseResume()
+    await waitUntil { engine.state == .recording(isPaused: true) }
+
+    currentTime = currentTime.addingTimeInterval(2)
+    engine.pauseResume()
+    await waitUntil { engine.state == .recording(isPaused: false) }
+
+    currentTime = currentTime.addingTimeInterval(1)
+    XCTAssertEqual(engine.recordingDuration(since: Date(timeIntervalSince1970: 500)), "00:10")
+  }
+
   func testStopWhilePausedUsesStopRecordingAndPersistsRecording() async {
     let captureService = MockCaptureService()
     let observer = MockObserver()
