@@ -2,7 +2,7 @@ import AVFoundation
 import CoreGraphics
 import Foundation
 
-public final class PermissionService {
+public final class PermissionService: PermissionServicing {
   public init() {}
 
   public func ensureScreenRecordingAccess() -> Bool {

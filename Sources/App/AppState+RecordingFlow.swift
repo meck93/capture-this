@@ -93,9 +93,8 @@ extension AppState {
   }
 
   func togglePauseResume() {
-    if case .recording = recordingState {
-      errorMessage = "Pause/resume is not available yet."
-    }
+    guard case .recording = recordingState else { return }
+    engine.pauseResume()
   }
 
   func toggleHUD() {

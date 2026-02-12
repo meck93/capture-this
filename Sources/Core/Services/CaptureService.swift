@@ -2,37 +2,38 @@ import AVFoundation
 import Foundation
 import ScreenCaptureKit
 
-public struct CaptureRecordingOptions: Sendable {
-  public let preferredFileType: AVFileType?
-  public let preferredVideoCodec: AVVideoCodecType?
-
-  public init(preferredFileType: AVFileType?, preferredVideoCodec: AVVideoCodecType?) {
-    self.preferredFileType = preferredFileType
-    self.preferredVideoCodec = preferredVideoCodec
-  }
-}
-
-public struct CaptureRecordingHandlers {
-  public let presenterOverlay: (Bool) -> Void
-  public let error: (Error) -> Void
-
-  public init(presenterOverlay: @escaping (Bool) -> Void, error: @escaping (Error) -> Void) {
-    self.presenterOverlay = presenterOverlay
-    self.error = error
-  }
-}
-
-public final class CaptureService: NSObject {
+public final class CaptureService: NSObject, CaptureServicing {
   private var stream: SCStream?
   private var recordingOutput: SCRecordingOutput?
-  private var outputURL: URL?
-  private var finishContinuation: CheckedContinuation<URL, Error>?
+  private var activeSegmentURL: URL?
+
+  private var segmentURLs: [URL] = []
+  private var segmentIndex = 0
+  private var baseOutputURL: URL?
+  private var recordingOptions: CaptureRecordingOptions?
+  private var resolvedOutputFileType: AVFileType?
+  private var resolvedVideoCodec: AVVideoCodecType?
+
+  private var finishContinuation: CheckedContinuation<Void, Error>?
+  private var pauseContinuation: CheckedContinuation<Void, Error>?
+  private var discardContinuation: CheckedContinuation<Void, Error>?
+  private var isTransitioningOutput = false
+
   private var presenterOverlayHandler: ((Bool) -> Void)?
   private var errorHandler: ((Error) -> Void)?
+
   private let sampleOutput = SampleStreamOutput()
   private let sampleQueue = DispatchQueue(label: "CaptureThis.SampleOutput")
+  private let stitcher: SegmentStitcher
+  private let fileManager: FileManager
 
-  override public init() {
+  override public convenience init() {
+    self.init(stitcher: SegmentStitcher(), fileManager: .default)
+  }
+
+  init(stitcher: SegmentStitcher, fileManager: FileManager = .default) {
+    self.stitcher = stitcher
+    self.fileManager = fileManager
     super.init()
   }
 
@@ -47,167 +48,353 @@ public final class CaptureService: NSObject {
       try await stopAndReset()
     }
 
-    self.outputURL = outputURL
+    resetSegmentState()
     presenterOverlayHandler = handlers.presenterOverlay
     errorHandler = handlers.error
+    recordingOptions = options
+    baseOutputURL = outputURL
 
     let stream = SCStream(filter: filter, configuration: configuration, delegate: self)
-    let recordingConfig = SCRecordingOutputConfiguration()
-    let outputFileType = preferredFileType(
-      from: recordingConfig.availableOutputFileTypes,
-      preferred: options.preferredFileType
-    )
-    let videoCodec = preferredVideoCodec(
-      from: recordingConfig.availableVideoCodecTypes,
-      preferred: options.preferredVideoCodec
-    )
-    let resolvedOutputURL = outputURL
-      .deletingPathExtension()
-      .appendingPathExtension(fileExtension(for: outputFileType))
 
-    recordingConfig.outputURL = resolvedOutputURL
-    recordingConfig.outputFileType = outputFileType
-    recordingConfig.videoCodecType = videoCodec
+    do {
+      let (recordingOutput, segmentURL) = try makeRecordingOutput(forSegmentIndex: 0)
+      activeSegmentURL = segmentURL
 
-    self.outputURL = resolvedOutputURL
-    let recordingOutput = SCRecordingOutput(configuration: recordingConfig, delegate: self)
+      try stream.addStreamOutput(sampleOutput, type: .screen, sampleHandlerQueue: sampleQueue)
+      if configuration.capturesAudio {
+        try stream.addStreamOutput(sampleOutput, type: .audio, sampleHandlerQueue: sampleQueue)
+      }
+      if configuration.captureMicrophone {
+        try stream.addStreamOutput(sampleOutput, type: .microphone, sampleHandlerQueue: sampleQueue)
+      }
 
-    try stream.addStreamOutput(sampleOutput, type: .screen, sampleHandlerQueue: sampleQueue)
-    if configuration.capturesAudio {
-      try stream.addStreamOutput(sampleOutput, type: .audio, sampleHandlerQueue: sampleQueue)
+      try stream.addRecordingOutput(recordingOutput)
+      try await stream.startCapture()
+
+      self.stream = stream
+      self.recordingOutput = recordingOutput
+      segmentIndex = 0
+    } catch {
+      try? await stopAndReset()
+      throw error
     }
-    if configuration.captureMicrophone {
-      try stream.addStreamOutput(sampleOutput, type: .microphone, sampleHandlerQueue: sampleQueue)
-    }
-
-    try stream.addRecordingOutput(recordingOutput)
-    try await stream.startCapture()
-
-    self.stream = stream
-    self.recordingOutput = recordingOutput
   }
 
-  public func stopRecording() async throws -> URL {
-    guard let stream, let recordingOutput else {
+  public func pauseRecording() async throws {
+    guard let stream, let recordingOutput, !isTransitioningOutput else {
       throw AppError.captureFailed
     }
 
-    return try await withCheckedThrowingContinuation { continuation in
-      finishContinuation = continuation
+    isTransitioningOutput = true
+    try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+      pauseContinuation = continuation
       do {
         try stream.removeRecordingOutput(recordingOutput)
       } catch {
-        finishContinuation?.resume(throwing: error)
-        finishContinuation = nil
-        return
+        pauseContinuation = nil
+        isTransitioningOutput = false
+        continuation.resume(throwing: error)
       }
     }
   }
 
-  private func stopAndReset() async throws {
-    if let recordingOutput, let stream {
-      try? stream.removeStreamOutput(sampleOutput, type: .screen)
-      try? stream.removeStreamOutput(sampleOutput, type: .audio)
-      try? stream.removeStreamOutput(sampleOutput, type: .microphone)
-      try? stream.removeRecordingOutput(recordingOutput)
-      try? await stream.stopCapture()
+  public func resumeRecording() throws {
+    guard let stream, recordingOutput == nil, !isTransitioningOutput else {
+      throw AppError.captureFailed
     }
-    stream = nil
-    recordingOutput = nil
-    outputURL = nil
-  }
-}
 
-extension CaptureService: SCStreamDelegate {
-  public func stream(_: SCStream, didStopWithError error: Error) {
-    let hadContinuation = finishContinuation != nil
-    finishContinuation?.resume(throwing: error)
-    finishContinuation = nil
-    if !hadContinuation {
-      errorHandler?(error)
-    }
-    stream = nil
-    recordingOutput = nil
-    outputURL = nil
-  }
+    isTransitioningOutput = true
+    segmentIndex += 1
 
-  public func stream(_: SCStream, outputEffectDidStart didStart: Bool) {
-    presenterOverlayHandler?(didStart)
-  }
-}
-
-extension CaptureService: SCRecordingOutputDelegate {
-  public func recordingOutputDidFinishRecording(_: SCRecordingOutput) {
-    if let outputURL {
-      finishContinuation?.resume(returning: outputURL)
-      finishContinuation = nil
-    }
-    Task { [weak self] in
-      try? await self?.stopAndReset()
+    do {
+      let (newOutput, segmentURL) = try makeRecordingOutput(forSegmentIndex: segmentIndex)
+      activeSegmentURL = segmentURL
+      try stream.addRecordingOutput(newOutput)
+      recordingOutput = newOutput
+      isTransitioningOutput = false
+    } catch {
+      segmentIndex = max(segmentIndex - 1, 0)
+      activeSegmentURL = nil
+      isTransitioningOutput = false
+      throw error
     }
   }
 
-  public func recordingOutput(_: SCRecordingOutput, didFailWithError error: Error) {
-    let hadContinuation = finishContinuation != nil
-    finishContinuation?.resume(throwing: error)
-    finishContinuation = nil
-    if !hadContinuation {
-      errorHandler?(error)
+  public func stopRecording() async throws -> URL {
+    guard stream != nil, !isTransitioningOutput else {
+      throw AppError.captureFailed
     }
-    Task { [weak self] in
-      try? await self?.stopAndReset()
+
+    if let stream, let recordingOutput {
+      isTransitioningOutput = true
+      try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+        finishContinuation = continuation
+        do {
+          try stream.removeRecordingOutput(recordingOutput)
+        } catch {
+          finishContinuation = nil
+          isTransitioningOutput = false
+          continuation.resume(throwing: error)
+        }
+      }
+    }
+
+    guard let baseOutputURL, let outputFileType = resolvedOutputFileType else {
+      throw AppError.captureFailed
+    }
+
+    let segments = segmentURLs
+    do {
+      let result = try await stitcher.stitch(
+        segments: segments,
+        destination: baseOutputURL,
+        outputFileType: outputFileType
+      )
+      try await stopAndReset()
+      return result
+    } catch {
+      try? await stopAndReset(clearSegmentState: false)
+      throw error
+    }
+  }
+
+  public func discardRecording() async {
+    if let stream, let recordingOutput, !isTransitioningOutput {
+      isTransitioningOutput = true
+      do {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+          discardContinuation = continuation
+          do {
+            try stream.removeRecordingOutput(recordingOutput)
+          } catch {
+            discardContinuation = nil
+            isTransitioningOutput = false
+            continuation.resume(throwing: error)
+          }
+        }
+      } catch {
+        recordingOutputDidFail(error)
+      }
+    }
+
+    let urlsToDelete = Set(segmentURLs + [activeSegmentURL].compactMap(\.self))
+    for url in urlsToDelete {
+      try? fileManager.removeItem(at: url)
+    }
+
+    try? await stopAndReset()
+  }
+
+  public func recoverPartialRecording() async -> URL? {
+    if let baseOutputURL, fileSize(at: baseOutputURL) > 0 {
+      resetSegmentState()
+      return baseOutputURL
+    }
+
+    guard let baseOutputURL,
+          let outputFileType = resolvedOutputFileType,
+          !segmentURLs.isEmpty
+    else {
+      resetSegmentState()
+      return nil
+    }
+
+    do {
+      let recovered = try await stitcher.stitch(
+        segments: segmentURLs,
+        destination: baseOutputURL,
+        outputFileType: outputFileType
+      )
+      resetSegmentState()
+      return recovered
+    } catch {
+      let fallback = segmentURLs
+        .sorted { fileSize(at: $0) > fileSize(at: $1) }
+        .first(where: { fileSize(at: $0) > 0 })
+      resetSegmentState()
+      return fallback
     }
   }
 }
 
 extension CaptureService {
-  private func preferredFileType(from available: [AVFileType], preferred: AVFileType?) -> AVFileType {
-    if let preferred, available.contains(preferred) {
-      return preferred
+  func makeRecordingOutput(forSegmentIndex index: Int) throws -> (SCRecordingOutput, URL) {
+    guard let originalBaseOutputURL = baseOutputURL else {
+      throw AppError.captureFailed
     }
-    if available.contains(.mp4) {
-      return .mp4
+
+    let recordingConfig = SCRecordingOutputConfiguration()
+    let outputFileType: AVFileType
+    let videoCodec: AVVideoCodecType
+
+    if let resolvedOutputFileType, let resolvedVideoCodec {
+      outputFileType = resolvedOutputFileType
+      videoCodec = resolvedVideoCodec
+    } else {
+      outputFileType = preferredFileType(
+        from: recordingConfig.availableOutputFileTypes,
+        preferred: recordingOptions?.preferredFileType
+      )
+      videoCodec = preferredVideoCodec(
+        from: recordingConfig.availableVideoCodecTypes,
+        preferred: recordingOptions?.preferredVideoCodec
+      )
+      resolvedOutputFileType = outputFileType
+      resolvedVideoCodec = videoCodec
+      baseOutputURL = originalBaseOutputURL
+        .deletingPathExtension()
+        .appendingPathExtension(fileExtension(for: outputFileType))
     }
-    if available.contains(.mov) {
-      return .mov
+
+    guard let resolvedBaseOutputURL = baseOutputURL else {
+      throw AppError.captureFailed
     }
-    return available.first ?? .mp4
+
+    let segmentURL = segmentURL(for: index, baseOutputURL: resolvedBaseOutputURL, fileType: outputFileType)
+    if fileManager.fileExists(atPath: segmentURL.path) {
+      try? fileManager.removeItem(at: segmentURL)
+    }
+
+    recordingConfig.outputURL = segmentURL
+    recordingConfig.outputFileType = outputFileType
+    recordingConfig.videoCodecType = videoCodec
+
+    let output = SCRecordingOutput(configuration: recordingConfig, delegate: self)
+    return (output, segmentURL)
   }
 
-  private func preferredVideoCodec(
-    from available: [AVVideoCodecType],
-    preferred: AVVideoCodecType?
-  ) -> AVVideoCodecType {
-    if let preferred, available.contains(preferred) {
-      return preferred
-    }
-    if available.contains(.h264) {
-      return .h264
-    }
-    if available.contains(.hevc) {
-      return .hevc
-    }
-    return available.first ?? .h264
+  func segmentURL(for index: Int, baseOutputURL: URL, fileType: AVFileType) -> URL {
+    let baseNameURL = baseOutputURL.deletingPathExtension()
+    let filename = "\(baseNameURL.lastPathComponent)_seg\(index)"
+    return baseNameURL
+      .deletingLastPathComponent()
+      .appendingPathComponent(filename)
+      .appendingPathExtension(fileExtension(for: fileType))
   }
 
-  private func fileExtension(for fileType: AVFileType) -> String {
-    switch fileType {
-    case .mp4:
-      "mp4"
-    case .mov:
-      "mov"
-    case .m4v:
-      "m4v"
-    default:
-      "mp4"
+  func finalizeActiveSegment() {
+    if let activeSegmentURL {
+      segmentURLs.append(activeSegmentURL)
+      self.activeSegmentURL = nil
+    }
+    recordingOutput = nil
+  }
+
+  func recordingOutputDidFail(_ error: Error) {
+    let hadContinuation = pauseContinuation != nil || finishContinuation != nil || discardContinuation != nil
+
+    pauseContinuation?.resume(throwing: error)
+    finishContinuation?.resume(throwing: error)
+    discardContinuation?.resume(throwing: error)
+
+    pauseContinuation = nil
+    finishContinuation = nil
+    discardContinuation = nil
+    isTransitioningOutput = false
+
+    if !hadContinuation {
+      errorHandler?(error)
+    }
+
+    Task { [weak self] in
+      try? await self?.stopAndReset(clearSegmentState: false)
     }
   }
-}
 
-private final class SampleStreamOutput: NSObject, SCStreamOutput {
-  func stream(
-    _: SCStream,
-    didOutputSampleBuffer _: CMSampleBuffer,
-    of _: SCStreamOutputType
-  ) {}
+  func handleOutputEffectDidStart(_ didStart: Bool) {
+    presenterOverlayHandler?(didStart)
+  }
+
+  func handleRecordingOutputDidFinish() {
+    if let pauseContinuation {
+      self.pauseContinuation = nil
+      finalizeActiveSegment()
+      isTransitioningOutput = false
+      pauseContinuation.resume()
+      return
+    }
+
+    if let finishContinuation {
+      self.finishContinuation = nil
+      finalizeActiveSegment()
+      isTransitioningOutput = false
+      finishContinuation.resume()
+      return
+    }
+
+    if let discardContinuation {
+      self.discardContinuation = nil
+      finalizeActiveSegment()
+      isTransitioningOutput = false
+      discardContinuation.resume()
+      return
+    }
+
+    finalizeActiveSegment()
+    isTransitioningOutput = false
+  }
+
+  func handleStreamDidStop(with error: Error) {
+    let hadContinuation = pauseContinuation != nil || finishContinuation != nil || discardContinuation != nil
+
+    pauseContinuation?.resume(throwing: error)
+    finishContinuation?.resume(throwing: error)
+    discardContinuation?.resume(throwing: error)
+
+    pauseContinuation = nil
+    finishContinuation = nil
+    discardContinuation = nil
+    isTransitioningOutput = false
+
+    if !hadContinuation {
+      errorHandler?(error)
+    }
+
+    stream = nil
+    recordingOutput = nil
+    activeSegmentURL = nil
+  }
+
+  func stopAndReset(clearSegmentState: Bool = true) async throws {
+    if let stream {
+      try? stream.removeStreamOutput(sampleOutput, type: .screen)
+      try? stream.removeStreamOutput(sampleOutput, type: .audio)
+      try? stream.removeStreamOutput(sampleOutput, type: .microphone)
+      if let recordingOutput {
+        try? stream.removeRecordingOutput(recordingOutput)
+      }
+      try? await stream.stopCapture()
+    }
+
+    stream = nil
+    recordingOutput = nil
+    activeSegmentURL = nil
+    isTransitioningOutput = false
+    pauseContinuation = nil
+    finishContinuation = nil
+    discardContinuation = nil
+
+    if clearSegmentState {
+      resetSegmentState()
+    }
+  }
+
+  func resetSegmentState() {
+    segmentURLs = []
+    segmentIndex = 0
+    baseOutputURL = nil
+    recordingOptions = nil
+    resolvedOutputFileType = nil
+    resolvedVideoCodec = nil
+    activeSegmentURL = nil
+  }
+
+  func fileSize(at url: URL) -> Int64 {
+    guard let attributes = try? fileManager.attributesOfItem(atPath: url.path),
+          let size = attributes[.size] as? NSNumber
+    else {
+      return 0
+    }
+    return size.int64Value
+  }
 }

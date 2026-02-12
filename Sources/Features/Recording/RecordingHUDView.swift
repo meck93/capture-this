@@ -16,21 +16,40 @@ struct RecordingHUDView: View {
       } else if case .pickingSource = appState.recordingState {
         Text("Select a source…")
           .font(.headline)
-      } else if case .recording = appState.recordingState {
-        TimelineView(.periodic(from: Date(), by: 1)) { _ in
+      } else if case let .recording(isPaused) = appState.recordingState {
+        if isPaused {
           HStack(spacing: 8) {
             Circle()
-              .fill(Color.red)
+              .fill(Color.orange)
               .frame(width: 10, height: 10)
             Text(timerText)
               .font(.system(.body, design: .monospaced))
           }
           .frame(maxWidth: .infinity)
+        } else {
+          TimelineView(.periodic(from: Date(), by: 1)) { _ in
+            HStack(spacing: 8) {
+              Circle()
+                .fill(Color.red)
+                .frame(width: 10, height: 10)
+              Text(timerText)
+                .font(.system(.body, design: .monospaced))
+            }
+            .frame(maxWidth: .infinity)
+          }
         }
       }
 
       HStack(spacing: 8) {
-        if case .recording = appState.recordingState {
+        if case let .recording(isPaused) = appState.recordingState {
+          Button {
+            appState.togglePauseResume()
+          } label: {
+            Image(systemName: isPaused ? "play.fill" : "pause.fill")
+              .frame(width: 18)
+          }
+          .help(isPaused ? "Resume" : "Pause")
+
           Button("Stop") {
             appState.stopRecording()
           }
