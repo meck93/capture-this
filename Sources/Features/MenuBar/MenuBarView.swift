@@ -17,14 +17,14 @@ struct MenuBarView: View {
       }
       .pickerStyle(.segmented)
 
-      Button(recordButtonTitle) {
+      Button(Self.recordButtonTitle(for: appState.recordingState)) {
         appState.startOrStopRecording()
       }
       .keyboardShortcut(.defaultAction)
-      .disabled(isRecordButtonDisabled)
+      .disabled(Self.isRecordButtonDisabled(for: appState.recordingState))
 
-      if case let .recording(isPaused) = appState.recordingState {
-        Button(isPaused ? "Resume" : "Pause") {
+      if let pauseResumeTitle = Self.pauseResumeButtonTitle(for: appState.recordingState) {
+        Button(pauseResumeTitle) {
           appState.togglePauseResume()
         }
       }
@@ -80,9 +80,11 @@ struct MenuBarView: View {
     .padding(12)
     .frame(width: 320)
   }
+}
 
-  private var recordButtonTitle: String {
-    switch appState.recordingState {
+extension MenuBarView {
+  static func recordButtonTitle(for state: RecordingState) -> String {
+    switch state {
     case .recording(true):
       "Paused"
     case .recording(false):
@@ -98,13 +100,20 @@ struct MenuBarView: View {
     }
   }
 
-  private var isRecordButtonDisabled: Bool {
-    switch appState.recordingState {
+  static func isRecordButtonDisabled(for state: RecordingState) -> Bool {
+    switch state {
     case .countdown, .pickingSource, .stopping:
       true
     default:
       false
     }
+  }
+
+  static func pauseResumeButtonTitle(for state: RecordingState) -> String? {
+    if case let .recording(isPaused) = state {
+      return isPaused ? "Resume" : "Pause"
+    }
+    return nil
   }
 }
 
