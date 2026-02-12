@@ -165,9 +165,9 @@ extension RecordingEngine {
     guard state.isRecording || state == .stopping else { return }
     setState(.stopping)
     isPauseResumeTransitioning = false
+    defer { directoryProvider.stopAccessing() }
 
     do {
-      directoryProvider.stopAccessing()
       if discard {
         await captureService.discardRecording()
         setState(.idle)
@@ -194,7 +194,6 @@ extension RecordingEngine {
         }
 
         setState(.idle)
-        directoryProvider.stopAccessing()
         return
       }
       await reportError(error)
