@@ -97,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     button.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: "CaptureThis")
   }
 
+  @MainActor
   private func applyCaptureExclusions(for notification: Notification) {
     guard let window = notification.object as? NSWindow else { return }
     if window.identifier == CameraOverlayWindowController.overlayIdentifier {
