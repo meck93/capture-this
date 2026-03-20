@@ -40,6 +40,10 @@ final class CameraOverlayWindowController {
     previewView.attach(session: session)
   }
 
+  func detach() {
+    previewView.detach()
+  }
+
   func show() {
     positionPanel()
     window.orderFrontRegardless()
@@ -84,6 +88,10 @@ final class CameraPreviewView: NSView {
 
   func attach(session: AVCaptureSession) {
     previewLayer.session = session
+  }
+
+  func detach() {
+    previewLayer.session = nil
   }
 
   override func layout() {
