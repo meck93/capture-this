@@ -54,6 +54,16 @@ final class RecordingEngineTests: XCTestCase {
     XCTAssertEqual(engine.settings.countdownSeconds, 10)
   }
 
+  func testCancelHotKeyEnabledOnlyBeforeRecordingStarts() {
+    XCTAssertTrue(RecordingState.countdown(3).shouldEnableCancelHotKey)
+    XCTAssertTrue(RecordingState.pickingSource.shouldEnableCancelHotKey)
+    XCTAssertFalse(RecordingState.recording(isPaused: false).shouldEnableCancelHotKey)
+    XCTAssertFalse(RecordingState.recording(isPaused: true).shouldEnableCancelHotKey)
+    XCTAssertFalse(RecordingState.stopping.shouldEnableCancelHotKey)
+    XCTAssertFalse(RecordingState.idle.shouldEnableCancelHotKey)
+    XCTAssertFalse(RecordingState.error("failed").shouldEnableCancelHotKey)
+  }
+
   // MARK: - Helpers
 
   private func makeEngine(settings: RecordingSettings = RecordingSettings()) -> RecordingEngine {

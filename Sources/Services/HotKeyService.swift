@@ -22,30 +22,22 @@ final class HotKeyService {
     cancelHandler = handlers.cancel
     self.onError = onError
 
-    do {
-      startStopHotKey = try HotKey(keyCombo: KeyCombo(key: .r, modifiers: [.command, .shift]))
-      pauseResumeHotKey = try HotKey(keyCombo: KeyCombo(key: .p, modifiers: [.command, .shift]))
-      toggleHUDHotKey = try HotKey(keyCombo: KeyCombo(key: .h, modifiers: [.command, .shift]))
-      openAppHotKey = try HotKey(keyCombo: KeyCombo(key: .c, modifiers: [.command, .shift]))
+    startStopHotKey = HotKey(keyCombo: KeyCombo(key: .r, modifiers: [.command, .shift]))
+    pauseResumeHotKey = HotKey(keyCombo: KeyCombo(key: .p, modifiers: [.command, .shift]))
+    toggleHUDHotKey = HotKey(keyCombo: KeyCombo(key: .h, modifiers: [.command, .shift]))
+    openAppHotKey = HotKey(keyCombo: KeyCombo(key: .c, modifiers: [.command, .shift]))
 
-      startStopHotKey?.keyDownHandler = handlers.startStop
-      pauseResumeHotKey?.keyDownHandler = handlers.pauseResume
-      toggleHUDHotKey?.keyDownHandler = handlers.toggleHUD
-      openAppHotKey?.keyDownHandler = handlers.openApp
-    } catch {
-      onError(error)
-    }
+    startStopHotKey?.keyDownHandler = handlers.startStop
+    pauseResumeHotKey?.keyDownHandler = handlers.pauseResume
+    toggleHUDHotKey?.keyDownHandler = handlers.toggleHUD
+    openAppHotKey?.keyDownHandler = handlers.openApp
   }
 
   func setCancelHotKeyEnabled(_ enabled: Bool) {
     if enabled {
       guard cancelHotKey == nil, let cancelHandler else { return }
-      do {
-        cancelHotKey = try HotKey(keyCombo: KeyCombo(key: .escape, modifiers: []))
-        cancelHotKey?.keyDownHandler = cancelHandler
-      } catch {
-        onError?(error)
-      }
+      cancelHotKey = HotKey(keyCombo: KeyCombo(key: .escape, modifiers: []))
+      cancelHotKey?.keyDownHandler = cancelHandler
     } else {
       cancelHotKey = nil
     }

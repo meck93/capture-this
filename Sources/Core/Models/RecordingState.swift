@@ -15,9 +15,9 @@ public enum RecordingState: Equatable, Sendable {
 
   public var shouldEnableCancelHotKey: Bool {
     switch self {
-    case .countdown, .pickingSource, .recording, .stopping:
+    case .countdown, .pickingSource:
       true
-    case .idle, .error:
+    case .idle, .recording, .stopping, .error:
       false
     }
   }
