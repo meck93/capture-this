@@ -2,8 +2,14 @@ name: Release
 
 on:
   push:
-    branches: [main]
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version without the leading v, for example 0.1.0"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -68,8 +74,28 @@ jobs:
       - name: Package artifacts
         run: mise run package
 
-      - name: Set release tag
-        run: echo "RELEASE_TAG=build-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - name: Set release metadata
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            version="${{ inputs.version }}"
+            release_tag="v${version}"
+          else
+            release_tag="${GITHUB_REF_NAME}"
+            version="${release_tag#v}"
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)*([_-][A-Za-z0-9.-]+)?$ ]]; then
+            echo "Invalid release version: $version" >&2
+            exit 1
+          fi
+
+          dmg_sha256="$(shasum -a 256 artifacts/CaptureThis.dmg | awk '{print $1}')"
+
+          {
+            echo "RELEASE_VERSION=$version"
+            echo "RELEASE_TAG=$release_tag"
+            echo "DMG_SHA256=$dmg_sha256"
+          } >> "$GITHUB_ENV"
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
@@ -80,3 +106,47 @@ jobs:
           files: |
             artifacts/CaptureThis.app.zip
             artifacts/CaptureThis.dmg
+
+      - name: Create Homebrew tap token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ vars.HOMEBREW_TAP_APP_CLIENT_ID }}
+          private-key: ${{ secrets.HOMEBREW_TAP_APP_PRIVATE_KEY }}
+          owner: meck93
+          repositories: homebrew-tap
+
+      - name: Update Homebrew tap
+        env:
+          TAP_GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
+          DMG_SHA256: ${{ env.DMG_SHA256 }}
+        run: |
+          if [[ -z "$TAP_GITHUB_TOKEN" ]]; then
+            echo "Homebrew tap installation token is missing. Check HOMEBREW_TAP_APP_CLIENT_ID and HOMEBREW_TAP_APP_PRIVATE_KEY." >&2
+            exit 1
+          fi
+
+          tap_dir="$(mktemp -d)"
+          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/meck93/homebrew-tap.git" "$tap_dir"
+
+          mkdir -p "$tap_dir/Casks"
+          cp Casks/capture-this.rb "$tap_dir/Casks/capture-this.rb"
+
+          ruby -pi -e 'gsub(/version "[^"]+"/, "version \"#{ENV.fetch("RELEASE_VERSION")}\"")' "$tap_dir/Casks/capture-this.rb"
+          ruby -pi -e 'gsub(/sha256 "[^"]+"/, "sha256 \"#{ENV.fetch("DMG_SHA256")}\"")' "$tap_dir/Casks/capture-this.rb"
+
+          cd "$tap_dir"
+          brew audit --cask --new Casks/capture-this.rb
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/capture-this.rb
+
+          if git diff --cached --quiet; then
+            echo "Homebrew tap already up to date."
+            exit 0
+          fi
+
+          git commit -m "chore: update CaptureThis to ${RELEASE_VERSION}"
+          git push
