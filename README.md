@@ -27,6 +27,14 @@ macOS has built-in screen recording, but it's buried in menus and limited in fea
 
 ## Install
 
+### Homebrew
+
+```bash
+brew install --cask meck93/tap/capture-this
+```
+
+Homebrew installs the app into `/Applications` and keeps it up to date with normal `brew upgrade` flows.
+
 ### From source
 
 ```bash
