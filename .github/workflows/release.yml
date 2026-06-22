@@ -127,8 +127,8 @@ jobs:
             exit 1
           fi
 
-          tap_dir="$(mktemp -d)"
-          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/meck93/homebrew-tap.git" "$tap_dir"
+          HOMEBREW_NO_AUTO_UPDATE=1 brew tap meck93/tap "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/meck93/homebrew-tap.git"
+          tap_dir="$(brew --repo meck93/tap)"
 
           mkdir -p "$tap_dir/Casks"
           cp Casks/capture-this.rb "$tap_dir/Casks/capture-this.rb"
@@ -137,8 +137,7 @@ jobs:
           ruby -pi -e 'gsub(/sha256 "[^"]+"/, "sha256 \"#{ENV.fetch("DMG_SHA256")}\"")' "$tap_dir/Casks/capture-this.rb"
 
           cd "$tap_dir"
-          HOMEBREW_NO_AUTO_UPDATE=1 brew tap meck93/tap "$tap_dir"
-          HOMEBREW_NO_AUTO_UPDATE=1 brew audit --cask --new meck93/tap/capture-this
+          HOMEBREW_NO_AUTO_UPDATE=1 brew audit --cask meck93/tap/capture-this
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

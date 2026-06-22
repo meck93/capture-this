@@ -49,11 +49,12 @@ The release workflow will:
 5. Create or update the GitHub release for `v0.1.0`.
 6. Calculate the SHA-256 for `artifacts/CaptureThis.dmg`.
 7. Create a GitHub App installation token for `meck93/homebrew-tap`.
-8. Clone `meck93/homebrew-tap`.
-9. Copy `Casks/capture-this.rb` from this repository into the tap.
-10. Update `Casks/capture-this.rb` with the release version and DMG checksum.
-11. Register the temporary checkout as `meck93/tap` and run `brew audit --cask --new meck93/tap/capture-this`.
-12. Commit and push the tap update.
+8. Tap `meck93/homebrew-tap` with the GitHub App token.
+9. Resolve the canonical tap checkout with `brew --repo meck93/tap`.
+10. Copy `Casks/capture-this.rb` from this repository into the tap checkout.
+11. Update `Casks/capture-this.rb` with the release version and DMG checksum.
+12. Run `brew audit --cask meck93/tap/capture-this`.
+13. Commit and push the tap update.
 
 The first successful release creates `Casks/capture-this.rb` in the tap if it does not exist yet.
 
@@ -115,7 +116,10 @@ Validate and push:
 
 ```bash
 brew tap meck93/tap .
-brew audit --cask --new meck93/tap/capture-this
+tap_dir="$(brew --repo meck93/tap)"
+cp Casks/capture-this.rb "$tap_dir/Casks/capture-this.rb"
+cd "$tap_dir"
+brew audit --cask meck93/tap/capture-this
 git add Casks/capture-this.rb
 git commit -m "chore: update CaptureThis to 0.1.0"
 git push
