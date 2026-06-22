@@ -7,7 +7,7 @@ cask "capture-this" do
   desc "Native macOS menu bar app for screen recording"
   homepage "https://github.com/meck93/capture-this"
 
-  depends_on macos: ">= :sequoia"
+  depends_on macos: :sequoia
   depends_on arch: :arm64
 
   postflight do
