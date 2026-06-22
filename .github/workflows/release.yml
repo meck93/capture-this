@@ -137,7 +137,7 @@ jobs:
           ruby -pi -e 'gsub(/sha256 "[^"]+"/, "sha256 \"#{ENV.fetch("DMG_SHA256")}\"")' "$tap_dir/Casks/capture-this.rb"
 
           cd "$tap_dir"
-          brew audit --cask --new Casks/capture-this.rb
+          brew audit --cask --new capture-this
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

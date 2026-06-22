@@ -52,7 +52,7 @@ The release workflow will:
 8. Clone `meck93/homebrew-tap`.
 9. Copy `Casks/capture-this.rb` from this repository into the tap.
 10. Update `Casks/capture-this.rb` with the release version and DMG checksum.
-11. Run `brew audit --cask --new Casks/capture-this.rb`.
+11. Run `brew audit --cask --new capture-this` from inside the tap checkout.
 12. Commit and push the tap update.
 
 The first successful release creates `Casks/capture-this.rb` in the tap if it does not exist yet.
@@ -114,7 +114,7 @@ sha256 "DMG_SHA256_FROM_SHASUM"
 Validate and push:
 
 ```bash
-brew audit --cask --new Casks/capture-this.rb
+brew audit --cask --new capture-this
 git add Casks/capture-this.rb
 git commit -m "chore: update CaptureThis to 0.1.0"
 git push
