@@ -26,6 +26,8 @@ targets:
     deploymentTarget: "15.2"
     sources:
       - path: Sources/Core
+    resources:
+      - path: Resources/Localizable.xcstrings
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisCore

@@ -102,12 +102,9 @@ struct SettingsView: View {
       } header: {
         Text("Developer")
       } footer: {
-        Text(
-          "Enables verbose logging and lets the app's own windows (popover, HUD, settings) "
-            + "appear in screen captures. Leave off for normal use."
-        )
-        .font(.caption)
-        .foregroundStyle(.secondary)
+        Text(String(localized: "settings.developer.footer"))
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
     }
     .formStyle(.grouped)

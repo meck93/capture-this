@@ -12,11 +12,11 @@ public enum CaptureSource: String, CaseIterable, Identifiable, Sendable {
   public var displayName: String {
     switch self {
     case .display:
-      "Display"
+      String(localized: "Display", bundle: .captureThisCore)
     case .window:
-      "Window"
+      String(localized: "Window", bundle: .captureThisCore)
     case .application:
-      "Application"
+      String(localized: "Application", bundle: .captureThisCore)
     }
   }
 }

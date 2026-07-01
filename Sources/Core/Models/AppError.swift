@@ -10,15 +10,18 @@ public enum AppError: LocalizedError {
   public var errorDescription: String? {
     switch self {
     case .permissionDenied:
-      "Required permission was denied."
+      String(localized: "Required permission was denied.", bundle: .captureThisCore)
     case .captureFailed:
-      "Screen capture failed to start."
+      String(localized: "Screen capture failed to start.", bundle: .captureThisCore)
     case .fileWriteFailed:
-      "Unable to write the recording file."
+      String(localized: "Unable to write the recording file.", bundle: .captureThisCore)
     case .invalidSaveLocation:
-      "Please select the Movies folder or ~/Movies/CaptureThis to save recordings."
+      String(
+        localized: "Please select the Movies folder or ~/Movies/CaptureThis to save recordings.",
+        bundle: .captureThisCore
+      )
     case .screenRecordingDenied:
-      "Screen recording permission is required. Enable it in System Settings → Privacy & Security → Screen Recording."
+      String(localized: "error.screenRecordingDenied", bundle: .captureThisCore)
     }
   }
 }

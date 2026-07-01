@@ -58,14 +58,14 @@ struct MenuBarView: View {
 
       VStack(spacing: 0) {
         SettingsLink {
-          MenuRowLabel(title: "Settings", systemImage: "gearshape")
+          MenuRowLabel(title: String(localized: "Settings"), systemImage: "gearshape")
         }
         .buttonStyle(MenuRowButtonStyle())
 
         Button {
           NSApp.terminate(nil)
         } label: {
-          MenuRowLabel(title: "Quit", systemImage: "power")
+          MenuRowLabel(title: String(localized: "Quit"), systemImage: "power")
         }
         .buttonStyle(MenuRowButtonStyle())
       }
@@ -284,17 +284,17 @@ extension MenuBarView {
   static func recordButtonTitle(for state: RecordingState) -> String {
     switch state {
     case .recording(true):
-      "Paused"
+      String(localized: "Paused")
     case .recording(false):
-      "Stop Recording"
+      String(localized: "Stop Recording")
     case .countdown:
-      "Counting down…"
+      String(localized: "Counting down…")
     case .pickingSource:
-      "Picking source…"
+      String(localized: "Picking source…")
     case .stopping:
-      "Stopping…"
+      String(localized: "Stopping…")
     default:
-      "Record"
+      String(localized: "Record")
     }
   }
 
@@ -320,7 +320,7 @@ extension MenuBarView {
 
   static func pauseResumeButtonTitle(for state: RecordingState) -> String? {
     if case let .recording(isPaused) = state {
-      return isPaused ? "Resume" : "Pause"
+      return isPaused ? String(localized: "Resume") : String(localized: "Pause")
     }
     return nil
   }
