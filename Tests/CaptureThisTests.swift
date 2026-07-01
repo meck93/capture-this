@@ -4,17 +4,17 @@ import XCTest
 
 final class CaptureThisTests: XCTestCase {
   func testMenuBarRecordButtonTitles() {
-    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .idle), "Record")
-    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .recording(isPaused: false)), "Stop Recording")
-    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .recording(isPaused: true)), "Paused")
-    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .countdown(2)), "Counting down…")
-    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .pickingSource), "Picking source…")
-    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .stopping), "Stopping…")
+    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .idle), String(localized: "Record"))
+    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .recording(isPaused: false)), String(localized: "Stop Recording"))
+    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .recording(isPaused: true)), String(localized: "Paused"))
+    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .countdown(2)), String(localized: "Counting down…"))
+    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .pickingSource), String(localized: "Picking source…"))
+    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .stopping), String(localized: "Stopping…"))
   }
 
   func testMenuBarPauseResumeButtonTitle() {
-    XCTAssertEqual(MenuBarView.pauseResumeButtonTitle(for: .recording(isPaused: false)), "Pause")
-    XCTAssertEqual(MenuBarView.pauseResumeButtonTitle(for: .recording(isPaused: true)), "Resume")
+    XCTAssertEqual(MenuBarView.pauseResumeButtonTitle(for: .recording(isPaused: false)), String(localized: "Pause"))
+    XCTAssertEqual(MenuBarView.pauseResumeButtonTitle(for: .recording(isPaused: true)), String(localized: "Resume"))
     XCTAssertNil(MenuBarView.pauseResumeButtonTitle(for: .idle))
   }
 
@@ -51,7 +51,7 @@ final class CaptureThisTests: XCTestCase {
 
   func testDeniedPermissionActionOpensSettings() {
     let item = PermissionSetupItem(kind: .camera, status: .denied, isRequired: true)
-    XCTAssertEqual(item.actionTitle, "Open Settings")
+    XCTAssertEqual(item.actionTitle, String(localized: "Open Settings"))
   }
 
   func testRecordingHUDHelpers() {

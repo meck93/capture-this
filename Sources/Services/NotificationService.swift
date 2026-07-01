@@ -37,7 +37,7 @@ final class NotificationService: NSObject {
       guard await authorizationStatus().isGranted else { return }
 
       let content = UNMutableNotificationContent()
-      content.title = "Recording complete"
+      content.title = String(localized: "Recording complete")
       content.body = recording.url.lastPathComponent
       content.categoryIdentifier = "recording.complete"
       content.userInfo = ["fileURL": recording.url.absoluteString]
@@ -55,13 +55,13 @@ final class NotificationService: NSObject {
   private func registerCategories() {
     let openAction = UNNotificationAction(
       identifier: "recording.open",
-      title: "Open",
+      title: String(localized: "Open"),
       options: [.foreground]
     )
 
     let revealAction = UNNotificationAction(
       identifier: "recording.reveal",
-      title: "Reveal in Finder",
+      title: String(localized: "Reveal in Finder"),
       options: [.foreground]
     )
 

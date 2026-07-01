@@ -15,30 +15,30 @@ enum PermissionSetupKind: CaseIterable, Identifiable {
   var title: String {
     switch self {
     case .screenRecording:
-      "Screen Recording"
+      String(localized: "Screen Recording")
     case .saveFolder:
-      "Save Folder"
+      String(localized: "Save Folder")
     case .camera:
-      "Camera"
+      String(localized: "Camera")
     case .microphone:
-      "Microphone"
+      String(localized: "Microphone")
     case .notifications:
-      "Notifications"
+      String(localized: "Notifications")
     }
   }
 
   var detail: String {
     switch self {
     case .screenRecording:
-      "Required to capture your screen."
+      String(localized: "Required to capture your screen.")
     case .saveFolder:
-      "Required to save recordings in Movies."
+      String(localized: "Required to save recordings in Movies.")
     case .camera:
-      "Required when camera overlay is enabled."
+      String(localized: "Required when camera overlay is enabled.")
     case .microphone:
-      "Required when microphone recording is enabled."
+      String(localized: "Required when microphone recording is enabled.")
     case .notifications:
-      "Optional alert when a recording finishes."
+      String(localized: "Optional alert when a recording finishes.")
     }
   }
 }
@@ -55,32 +55,36 @@ struct PermissionSetupItem: Identifiable, Equatable {
   var actionTitle: String? {
     guard !status.isGranted else { return nil }
     if status == .denied {
-      return kind == .saveFolder ? "Choose Folder" : "Open Settings"
+      return kind == .saveFolder ? String(localized: "Choose Folder") : String(localized: "Open Settings")
     }
     return switch kind {
     case .screenRecording:
-      "Open Settings"
+      String(localized: "Open Settings")
     case .saveFolder:
-      "Choose Folder"
+      String(localized: "Choose Folder")
     case .camera:
-      "Allow Camera"
+      String(localized: "Allow Camera")
     case .microphone:
-      "Allow Microphone"
+      String(localized: "Allow Microphone")
     case .notifications:
-      "Allow"
+      String(localized: "Allow")
     }
   }
 
   var statusTitle: String {
     switch status {
     case .granted:
-      "Granted"
+      String(localized: "Granted")
     case .notDetermined:
-      isRequired ? "Required" : "Optional"
+      if isRequired {
+        String(localized: "Required")
+      } else {
+        String(localized: "Optional")
+      }
     case .denied:
-      "Denied"
+      String(localized: "Denied")
     case .unknown:
-      "Check Again"
+      String(localized: "Check Again")
     }
   }
 }

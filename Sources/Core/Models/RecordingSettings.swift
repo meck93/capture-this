@@ -11,9 +11,9 @@ public enum RecordingFileFormat: String, Codable, CaseIterable, Identifiable, Se
   public var displayName: String {
     switch self {
     case .mp4:
-      "MP4"
+      String(localized: "MP4", bundle: .captureThisCore)
     case .mov:
-      "MOV"
+      String(localized: "MOV", bundle: .captureThisCore)
     }
   }
 }
@@ -29,9 +29,9 @@ public enum RecordingQuality: String, Codable, CaseIterable, Identifiable, Senda
   public var displayName: String {
     switch self {
     case .standard:
-      "Standard (H.264)"
+      String(localized: "Standard (H.264)", bundle: .captureThisCore)
     case .high:
-      "High (HEVC)"
+      String(localized: "High (HEVC)", bundle: .captureThisCore)
     }
   }
 }

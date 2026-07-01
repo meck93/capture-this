@@ -1,0 +1,3 @@
+"NSCameraUsageDescription" = "CaptureThis verwendet die Kamera für Bild-in-Bild-Aufnahmen.";
+"NSMicrophoneUsageDescription" = "CaptureThis verwendet das Mikrofon, um Sprache aufzunehmen.";
+"NSScreenCaptureUsageDescription" = "CaptureThis nimmt den Bildschirm auf, um Videos zu erstellen.";

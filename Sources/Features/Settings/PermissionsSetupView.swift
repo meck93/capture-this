@@ -29,8 +29,8 @@ struct PermissionsSetupView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: isPlain ? Theme.Spacing.sm : Theme.Spacing.md) {
-      group("Required", items: requiredItems)
-      group("Optional", items: optionalItems)
+      group(String(localized: "Required"), items: requiredItems)
+      group(String(localized: "Optional"), items: optionalItems)
     }
   }
 
@@ -58,8 +58,8 @@ struct PermissionsSetupView: View {
     }
   }
 
-  // The popover has no surrounding card, so each group gets its own; Settings
-  // leans on the Form section's card and stays flat to avoid box-in-box.
+  /// The popover has no surrounding card, so each group gets its own; Settings
+  /// leans on the Form section's card and stays flat to avoid box-in-box.
   @ViewBuilder
   private var groupBackground: some View {
     if isPlain {
@@ -136,8 +136,8 @@ private struct PermissionSetupRow: View {
     }
   }
 
-  // Only a genuine denial earns an alarm color. A not-yet-granted permission
-  // is the expected first-run state, so it stays neutral instead of screaming.
+  /// Only a genuine denial earns an alarm color. A not-yet-granted permission
+  /// is the expected first-run state, so it stays neutral instead of screaming.
   private var symbolColor: Color {
     switch item.status {
     case .granted:

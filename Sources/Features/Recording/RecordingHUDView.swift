@@ -50,7 +50,7 @@ struct RecordingHUDView: View {
             Image(systemName: Self.pauseResumeSymbolName(for: recordingState) ?? "pause.fill")
           }
           .buttonStyle(HUDIconButtonStyle())
-          .help(isPaused ? "Resume" : "Pause")
+          .help(isPaused ? String(localized: "Resume") : String(localized: "Pause"))
 
           Button {
             appState.stopRecording()
@@ -59,7 +59,7 @@ struct RecordingHUDView: View {
           }
           .buttonStyle(HUDIconButtonStyle(tint: Theme.Palette.record))
           .keyboardShortcut(.cancelAction)
-          .help("Stop")
+          .help(String(localized: "Stop"))
         } else if case .countdown = appState.recordingState {
           Button("Cancel") {
             appState.cancelRecording()

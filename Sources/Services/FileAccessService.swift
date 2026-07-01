@@ -26,13 +26,13 @@ final class FileAccessService {
     }
 
     let panel = NSOpenPanel()
-    panel.message = "Select the Movies folder or the CaptureThis folder in Movies."
+    panel.message = String(localized: "Select the Movies folder or the CaptureThis folder in Movies.")
     panel.directoryURL = moviesURL
     panel.canChooseDirectories = true
     panel.canChooseFiles = false
     panel.allowsMultipleSelection = false
     panel.canCreateDirectories = true
-    panel.prompt = "Grant Access"
+    panel.prompt = String(localized: "Grant Access")
 
     let response = panel.runModal()
     guard response == .OK, let selectedURL = panel.url else {
