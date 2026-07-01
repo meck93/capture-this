@@ -14,13 +14,27 @@ final class NotificationService: NSObject {
     registerCategories()
   }
 
+  func authorizationStatus() async -> PermissionStatus {
+    let settings = await center.notificationSettings()
+    return switch settings.authorizationStatus {
+    case .authorized, .provisional, .ephemeral:
+      PermissionStatus.granted
+    case .notDetermined:
+      PermissionStatus.notDetermined
+    case .denied:
+      PermissionStatus.denied
+    @unknown default:
+      PermissionStatus.unknown
+    }
+  }
+
   func requestAuthorization() async {
     _ = try? await center.requestAuthorization(options: [.alert, .sound])
   }
 
   func sendRecordingCompleteNotification(for recording: Recording) {
     Task {
-      await requestAuthorization()
+      guard await authorizationStatus().isGranted else { return }
 
       let content = UNMutableNotificationContent()
       content.title = "Recording complete"
@@ -72,9 +86,13 @@ extension NotificationService: UNUserNotificationCenterDelegate {
 
     switch response.actionIdentifier {
     case "recording.open":
-      NSWorkspace.shared.open(url)
+      await MainActor.run {
+        AppState.shared.openRecordingURL(url)
+      }
     case "recording.reveal":
-      NSWorkspace.shared.activateFileViewerSelecting([url])
+      await MainActor.run {
+        AppState.shared.revealRecordingURL(url)
+      }
     default:
       break
     }
