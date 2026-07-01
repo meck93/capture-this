@@ -52,7 +52,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
       object: nil,
       queue: .main
     ) { [weak self] notification in
-      self?.applyCaptureExclusions(for: notification)
+      Task { @MainActor in
+        self?.applyCaptureExclusions(for: notification)
+      }
     }
   }
 
@@ -66,9 +68,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
   func showPopover() {
     guard let button = statusItem?.button else { return }
+    // Accessory apps aren't activated by a status-item click, so the popover
+    // opens without a key window and the first click inside it is swallowed
+    // just to focus the app. Activate + make key so the first click acts.
+    NSApp.activate(ignoringOtherApps: true)
     popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
     DispatchQueue.main.async { [weak self] in
-      self?.popover.contentViewController?.view.window?.sharingType = .none
+      guard let window = self?.popover.contentViewController?.view.window else { return }
+      window.sharingType = .none
+      window.makeKeyAndOrderFront(nil)
     }
     clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
       self?.closePopover()
