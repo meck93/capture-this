@@ -42,29 +42,34 @@ struct RecordingHUDView: View {
         .frame(maxWidth: .infinity)
       }
 
-      HStack(spacing: 8) {
+      HStack(spacing: Theme.Spacing.md) {
         if case let .recording(isPaused) = recordingState {
           Button {
             appState.togglePauseResume()
           } label: {
             Image(systemName: Self.pauseResumeSymbolName(for: recordingState) ?? "pause.fill")
-              .frame(width: 18)
           }
+          .buttonStyle(HUDIconButtonStyle())
           .help(isPaused ? "Resume" : "Pause")
 
-          Button("Stop") {
+          Button {
             appState.stopRecording()
+          } label: {
+            Image(systemName: "stop.fill")
           }
+          .buttonStyle(HUDIconButtonStyle(tint: Theme.Palette.record))
           .keyboardShortcut(.cancelAction)
+          .help("Stop")
         } else if case .countdown = appState.recordingState {
           Button("Cancel") {
             appState.cancelRecording()
           }
+          .buttonStyle(.bordered)
           .keyboardShortcut(.cancelAction)
         }
       }
     }
-    .padding(16)
+    .padding(Theme.Spacing.lg)
     .frame(width: 220)
     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     .onExitCommand {
@@ -80,11 +85,11 @@ struct RecordingHUDView: View {
   private func color(named colorName: String) -> Color {
     switch colorName {
     case "orange":
-      .orange
+      Theme.Palette.paused
     case "red":
-      .red
+      Theme.Palette.record
     default:
-      .red
+      Theme.Palette.record
     }
   }
 }
