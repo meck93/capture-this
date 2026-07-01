@@ -9,6 +9,7 @@ struct SettingsView: View {
       Section {
         PermissionsSetupView(
           state: appState.permissionSetupState,
+          style: .settings,
           action: appState.performPermissionSetupAction(for:)
         )
       } header: {
