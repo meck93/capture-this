@@ -93,6 +93,21 @@ struct SettingsView: View {
           }
         }
       }
+
+      Section {
+        Toggle(isOn: debugModeBinding) {
+          Label("Debug mode", systemImage: "ladybug")
+        }
+      } header: {
+        Text("Developer")
+      } footer: {
+        Text(
+          "Enables verbose logging and lets the app's own windows (popover, HUD, settings) "
+            + "appear in screen captures. Leave off for normal use."
+        )
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      }
     }
     .formStyle(.grouped)
     .frame(minWidth: 440, idealWidth: 480, maxWidth: 720, minHeight: 480, idealHeight: 600, maxHeight: .infinity)
@@ -119,6 +134,13 @@ struct SettingsView: View {
     Binding(
       get: { appState.settings.isSystemAudioEnabled },
       set: { appState.updateSettings(appState.settings.updating(systemAudioEnabled: $0)) }
+    )
+  }
+
+  private var debugModeBinding: Binding<Bool> {
+    Binding(
+      get: { appState.settings.isDebugModeEnabled },
+      set: { appState.updateSettings(appState.settings.updating(debugModeEnabled: $0)) }
     )
   }
 }

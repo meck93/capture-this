@@ -47,6 +47,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     _ = NotificationService.shared
     AppState.shared.runStartupPermissions()
 
+    DebugMode.shared.setEnabled(AppState.shared.settings.isDebugModeEnabled)
+    AppState.shared.$settings
+      .map(\.isDebugModeEnabled)
+      .removeDuplicates()
+      .receive(on: DispatchQueue.main)
+      .sink { [weak self] enabled in
+        DebugMode.shared.setEnabled(enabled)
+        self?.applyCurrentSharingTypeToAllWindows()
+      }
+      .store(in: &cancellables)
+
     windowObserver = NotificationCenter.default.addObserver(
       forName: NSWindow.didBecomeKeyNotification,
       object: nil,
@@ -75,9 +86,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
     DispatchQueue.main.async { [weak self] in
       guard let window = self?.popover.contentViewController?.view.window else { return }
-      window.sharingType = .none
+      window.sharingType = self?.windowSharingType ?? .none
       window.makeKeyAndOrderFront(nil)
     }
+    DebugMode.shared.log("Popover shown")
     clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] _ in
       self?.closePopover()
     }
@@ -111,6 +123,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     if window.identifier == CameraOverlayWindowController.overlayIdentifier {
       return
     }
-    window.sharingType = .none
+    window.sharingType = windowSharingType
+  }
+
+  /// `.none` hides the app's own windows from screen capture. In debug mode we
+  /// use `.readOnly` so the popover / settings can be screenshotted.
+  private var windowSharingType: NSWindow.SharingType {
+    DebugMode.shared.isEnabled ? .readOnly : .none
+  }
+
+  @MainActor
+  private func applyCurrentSharingTypeToAllWindows() {
+    let type = windowSharingType
+    for window in NSApp.windows where window.identifier != CameraOverlayWindowController.overlayIdentifier {
+      window.sharingType = type
+    }
   }
 }

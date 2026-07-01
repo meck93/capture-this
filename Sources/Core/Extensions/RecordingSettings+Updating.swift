@@ -7,7 +7,8 @@ public extension RecordingSettings {
     microphoneEnabled: Bool? = nil,
     systemAudioEnabled: Bool? = nil,
     outputFormat: RecordingFileFormat? = nil,
-    recordingQuality: RecordingQuality? = nil
+    recordingQuality: RecordingQuality? = nil,
+    debugModeEnabled: Bool? = nil
   ) -> RecordingSettings {
     var copy = self
     if let countdownSeconds {
@@ -27,6 +28,9 @@ public extension RecordingSettings {
     }
     if let recordingQuality {
       copy.recordingQuality = recordingQuality
+    }
+    if let debugModeEnabled {
+      copy.isDebugModeEnabled = debugModeEnabled
     }
     return copy
   }
