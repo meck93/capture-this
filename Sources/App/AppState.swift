@@ -94,16 +94,10 @@ final class AppState: ObservableObject {
     let previous = settings
     settings = newSettings
     engine.updateSettings(newSettings)
+    refreshPermissionSetupState()
 
     if previous.isCameraEnabled != newSettings.isCameraEnabled {
-      if newSettings.isCameraEnabled {
-        Task { @MainActor in
-          let granted = await engine.permissionService.requestCameraAccess()
-          if !granted {
-            errorMessage = AppError.permissionDenied.localizedDescription
-          }
-        }
-      } else {
+      if !newSettings.isCameraEnabled {
         cameraService.stopPreview()
       }
     }
@@ -111,5 +105,42 @@ final class AppState: ObservableObject {
 
   func recordingDurationText(for date: Date) -> String {
     engine.recordingDuration(since: date)
+  }
+
+  func openRecording(_ recording: Recording) {
+    openRecordingURL(recording.url)
+  }
+
+  func revealRecording(_ recording: Recording) {
+    revealRecordingURL(recording.url)
+  }
+
+  func openRecordingURL(_ url: URL) {
+    accessRecordingURL {
+      NSWorkspace.shared.open(url)
+    }
+  }
+
+  func revealRecordingURL(_ url: URL) {
+    accessRecordingURL {
+      NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+  }
+
+  private func accessRecordingURL(action: @escaping () -> Void) {
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      do {
+        _ = try await fileAccessService.ensureRecordingsDirectoryAccess()
+        action()
+        Task { @MainActor [weak self] in
+          try? await Task.sleep(nanoseconds: 2_000_000_000)
+          self?.fileAccessService.stopAccessingIfNeeded()
+        }
+      } catch {
+        errorMessage = error.localizedDescription
+        openSetupForMissingPermissions()
+      }
+    }
   }
 }
