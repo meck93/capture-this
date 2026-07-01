@@ -277,6 +277,18 @@ private final class MockCaptureService: CaptureServicing {
 }
 
 private final class MockPermissionService: PermissionServicing {
+  func screenRecordingStatus() -> PermissionStatus {
+    .granted
+  }
+
+  func cameraStatus() -> PermissionStatus {
+    .granted
+  }
+
+  func microphoneStatus() -> PermissionStatus {
+    .granted
+  }
+
   func ensureScreenRecordingAccess() -> Bool {
     true
   }
