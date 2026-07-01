@@ -3,10 +3,26 @@ import CoreGraphics
 import Foundation
 
 public final class PermissionService: PermissionServicing {
-  public init() {}
+  /// `CGPreflightScreenCaptureAccess()` returns `false` for both "never asked"
+  /// and "denied", so we remember whether we've ever requested to tell them
+  /// apart — otherwise a fresh install looks denied before the first prompt.
+  private static let hasRequestedScreenRecordingKey = "hasRequestedScreenRecording"
+
+  private let defaults: UserDefaults
+
+  public convenience init() {
+    self.init(defaults: .standard)
+  }
+
+  public init(defaults: UserDefaults) {
+    self.defaults = defaults
+  }
 
   public func screenRecordingStatus() -> PermissionStatus {
-    CGPreflightScreenCaptureAccess() ? .granted : .denied
+    if CGPreflightScreenCaptureAccess() {
+      return .granted
+    }
+    return defaults.bool(forKey: Self.hasRequestedScreenRecordingKey) ? .denied : .notDetermined
   }
 
   public func cameraStatus() -> PermissionStatus {
@@ -21,6 +37,7 @@ public final class PermissionService: PermissionServicing {
     if CGPreflightScreenCaptureAccess() {
       return true
     }
+    defaults.set(true, forKey: Self.hasRequestedScreenRecordingKey)
     return CGRequestScreenCaptureAccess()
   }
 

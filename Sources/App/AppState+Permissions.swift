@@ -14,7 +14,13 @@ extension AppState {
     Task { @MainActor in
       switch kind {
       case .screenRecording:
-        openScreenRecordingSettings()
+        // Requesting access is what registers CaptureThis in the Screen
+        // Recording list and shows the system prompt — merely opening Settings
+        // never adds the entry. Once the user has denied, the request is a
+        // no-op, so fall back to Settings where they can flip the toggle.
+        if !engine.permissionService.ensureScreenRecordingAccess() {
+          openScreenRecordingSettings()
+        }
       case .saveFolder:
         _ = try? await fileAccessService.ensureRecordingsDirectoryAccess()
       case .camera:
