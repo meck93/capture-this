@@ -10,6 +10,7 @@ extension CaptureService: CaptureServicing {
     options: CaptureRecordingOptions,
     handlers: CaptureRecordingHandlers
   ) async throws {
+    logger.notice("Starting screen capture stream")
     if withStateLock({ stream != nil }) {
       try await stopAndReset()
     }
@@ -42,6 +43,7 @@ extension CaptureService: CaptureServicing {
 
       try newStream.addRecordingOutput(newOutput)
       try await newStream.startCapture()
+      logger.notice("Screen capture stream started")
 
       withStateLock {
         stream = newStream
@@ -51,6 +53,7 @@ extension CaptureService: CaptureServicing {
         phase = .recording
       }
     } catch {
+      logger.error("Failed to start screen capture stream: \(error.localizedDescription, privacy: .public)")
       try? await stopAndReset()
       throw error
     }
@@ -121,6 +124,7 @@ extension CaptureService: CaptureServicing {
   }
 
   public func stopRecording() async throws -> URL {
+    logger.notice("Stopping recording")
     guard await waitForOutputTransitionToSettle() else {
       try? await stopAndReset(clearSegmentState: false)
       throw AppError.captureFailed
@@ -137,8 +141,10 @@ extension CaptureService: CaptureServicing {
         outputFileType: stitchInput.outputFileType
       )
       try await stopAndReset()
+      logger.notice("Recording stopped")
       return stitchedURL
     } catch {
+      logger.error("Failed to stop recording cleanly: \(error.localizedDescription, privacy: .public)")
       try? await stopAndReset(clearSegmentState: false)
       throw error
     }

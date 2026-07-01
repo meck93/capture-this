@@ -66,6 +66,7 @@ extension CaptureService {
   }
 
   func recordingOutputDidFail(_ error: Error) {
+    logger.error("Recording output failed: \(error.localizedDescription, privacy: .public)")
     let (continuations, fallbackHandler) = withStateLock { () -> (Continuations, ((Error) -> Void)?) in
       let continuations = drainContinuationsLocked()
       let handler = continuations.hasActive ? nil : errorHandler
@@ -82,11 +83,13 @@ extension CaptureService {
   }
 
   func handleOutputEffectDidStart(_ didStart: Bool) {
+    logger.notice("Screen capture output effect active: \(didStart)")
     let handler = withStateLock { presenterOverlayHandler }
     handler?(didStart)
   }
 
   func handleRecordingOutputDidFinish() {
+    logger.notice("Recording output finished")
     let action: CompletionAction = withStateLock {
       finalizeActiveSegmentLocked()
 
@@ -122,6 +125,7 @@ extension CaptureService {
   }
 
   func handleStreamDidStop(with error: Error) {
+    logger.error("Screen capture stream stopped with error: \(error.localizedDescription, privacy: .public)")
     let (continuations, fallbackHandler) = withStateLock { () -> (Continuations, ((Error) -> Void)?) in
       let continuations = drainContinuationsLocked()
       let handler = continuations.hasActive ? nil : errorHandler
@@ -156,13 +160,37 @@ extension CaptureService {
     }
 
     if let streamToStop {
-      try? streamToStop.removeStreamOutput(sampleOutput, type: .screen)
-      try? streamToStop.removeStreamOutput(sampleOutput, type: .audio)
-      try? streamToStop.removeStreamOutput(sampleOutput, type: .microphone)
-      if let outputToRemove {
-        try? streamToStop.removeRecordingOutput(outputToRemove)
+      logger.notice("Stopping screen capture stream")
+      do {
+        try streamToStop.removeStreamOutput(sampleOutput, type: .screen)
+      } catch {
+        logger.error("Failed to remove screen stream output: \(error.localizedDescription, privacy: .public)")
       }
-      try? await streamToStop.stopCapture()
+      do {
+        try streamToStop.removeStreamOutput(sampleOutput, type: .audio)
+      } catch {
+        logger.error("Failed to remove audio stream output: \(error.localizedDescription, privacy: .public)")
+      }
+      do {
+        try streamToStop.removeStreamOutput(sampleOutput, type: .microphone)
+      } catch {
+        logger.error("Failed to remove microphone stream output: \(error.localizedDescription, privacy: .public)")
+      }
+      if let outputToRemove {
+        do {
+          try streamToStop.removeRecordingOutput(outputToRemove)
+        } catch {
+          logger.error("Failed to remove recording output: \(error.localizedDescription, privacy: .public)")
+        }
+      }
+      do {
+        try await streamToStop.stopCapture()
+        logger.notice("Screen capture stream stopped")
+      } catch {
+        logger.error("Failed to stop screen capture stream: \(error.localizedDescription, privacy: .public)")
+      }
+    } else {
+      logger.debug("Screen capture stop requested with no active stream")
     }
   }
 
