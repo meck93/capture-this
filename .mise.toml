@@ -37,15 +37,33 @@ run = "Scripts/package.sh"
 
 [tasks.install]
 description = "Build and install the app to /Applications"
-run = ["mise run build", "cp -R .build/Build/Products/Debug/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
+run = ["mise run build", "mise run stop-remove", "mise run install-open"]
+
+[tasks.stop-remove]
+description = "Stop CaptureThis and remove the current /Applications install"
+run = ["osascript -e 'quit app \"CaptureThis\"' || true", "rm -rf /Applications/CaptureThis.app"]
+
+[tasks.wipe-local-state]
+description = "Wipe local app settings, sandbox state, and granted permissions"
+run = [
+  "defaults delete com.capturethis.CaptureThis 2>/dev/null || true",
+  "rm -rf ~/Library/Containers/com.capturethis.CaptureThis/Data 2>/dev/null || true",
+  "tccutil reset ScreenCapture com.capturethis.CaptureThis || true",
+  "tccutil reset Camera com.capturethis.CaptureThis || true",
+  "tccutil reset Microphone com.capturethis.CaptureThis || true",
+]
+
+[tasks.install-open]
+description = "Install the built Debug app to /Applications and open it"
+run = ["cp -R .build/Build/Products/Debug/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
 
 [tasks.install-release]
 description = "Build release and install the app to /Applications"
 run = ["mise run release-build", "cp -R .build/Build/Products/Release/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
 
-[tasks.reinstall]
-description = "Rebuild and reinstall the app to /Applications"
-run = ["mise run build", "rm -rf /Applications/CaptureThis.app", "cp -R .build/Build/Products/Debug/CaptureThis.app /Applications/", "open /Applications/CaptureThis.app"]
+[tasks.fresh-install]
+description = "Build, wipe local app state and permissions, then install to /Applications"
+run = ["mise run build", "mise run stop-remove", "mise run wipe-local-state", "mise run install-open"]
 
 [tasks.build-cli]
 description = "Build the CLI tool"
