@@ -10,14 +10,21 @@ final class RecordingSettingsTests: XCTestCase {
     XCTAssertFalse(settings.isSystemAudioEnabled)
     XCTAssertEqual(settings.outputFormat, .mp4)
     XCTAssertEqual(settings.recordingQuality, .standard)
+    XCTAssertEqual(settings.gifExportQuality, .balanced)
   }
 
   func testUpdating() {
     let settings = RecordingSettings()
-    let updated = settings.updating(countdownSeconds: 5, cameraEnabled: false, recordingQuality: .high)
+    let updated = settings.updating(
+      countdownSeconds: 5,
+      cameraEnabled: false,
+      recordingQuality: .high,
+      gifExportQuality: .compact
+    )
     XCTAssertEqual(updated.countdownSeconds, 5)
     XCTAssertFalse(updated.isCameraEnabled)
     XCTAssertEqual(updated.recordingQuality, .high)
+    XCTAssertEqual(updated.gifExportQuality, .compact)
     // Unchanged fields
     XCTAssertTrue(updated.isMicrophoneEnabled)
     XCTAssertEqual(updated.outputFormat, .mp4)

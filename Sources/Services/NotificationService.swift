@@ -52,6 +52,26 @@ final class NotificationService: NSObject {
     }
   }
 
+  func sendGIFExportCompleteNotification(url: URL) {
+    Task {
+      guard await authorizationStatus().isGranted else { return }
+
+      let content = UNMutableNotificationContent()
+      content.title = String(localized: "GIF export complete")
+      content.body = url.lastPathComponent
+      content.categoryIdentifier = "gif.complete"
+      content.userInfo = ["fileURL": url.absoluteString]
+
+      let request = UNNotificationRequest(
+        identifier: UUID().uuidString,
+        content: content,
+        trigger: nil
+      )
+
+      try? await center.add(request)
+    }
+  }
+
   private func registerCategories() {
     let openAction = UNNotificationAction(
       identifier: "recording.open",
@@ -65,14 +85,27 @@ final class NotificationService: NSObject {
       options: [.foreground]
     )
 
-    let category = UNNotificationCategory(
+    let exportGIFAction = UNNotificationAction(
+      identifier: "recording.exportGIF",
+      title: String(localized: "Export as GIF"),
+      options: [.foreground]
+    )
+
+    let recordingCategory = UNNotificationCategory(
       identifier: "recording.complete",
+      actions: [openAction, revealAction, exportGIFAction],
+      intentIdentifiers: [],
+      options: []
+    )
+
+    let gifCategory = UNNotificationCategory(
+      identifier: "gif.complete",
       actions: [openAction, revealAction],
       intentIdentifiers: [],
       options: []
     )
 
-    center.setNotificationCategories([category])
+    center.setNotificationCategories([recordingCategory, gifCategory])
   }
 }
 
@@ -93,6 +126,8 @@ extension NotificationService: UNUserNotificationCenterDelegate {
       await MainActor.run {
         AppState.shared.revealRecordingURL(url)
       }
+    case "recording.exportGIF":
+      await AppState.shared.exportGIFFromNotification(fileURL: url)
     default:
       break
     }

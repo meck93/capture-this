@@ -84,12 +84,16 @@ extension RecordingEngine {
 
   func runCountdown(total: Int, filter: SCContentFilter) async {
     for remaining in stride(from: total, through: 1, by: -1) {
-      if Task.isCancelled { return }
+      if Task.isCancelled {
+        return
+      }
       setState(.countdown(remaining))
       try? await Task.sleep(nanoseconds: 1_000_000_000)
     }
 
-    if Task.isCancelled { return }
+    if Task.isCancelled {
+      return
+    }
     await beginRecording(with: filter)
   }
 
@@ -207,12 +211,16 @@ extension RecordingEngine {
 
     if settings.isCameraEnabled {
       let granted = await permissionService.requestCameraAccess()
-      if !granted { throw AppError.permissionDenied }
+      if !granted {
+        throw AppError.permissionDenied
+      }
     }
 
     if settings.isMicrophoneEnabled {
       let granted = await permissionService.requestMicrophoneAccess()
-      if !granted { throw AppError.permissionDenied }
+      if !granted {
+        throw AppError.permissionDenied
+      }
     }
   }
 

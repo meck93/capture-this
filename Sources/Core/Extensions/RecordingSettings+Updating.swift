@@ -8,6 +8,7 @@ public extension RecordingSettings {
     systemAudioEnabled: Bool? = nil,
     outputFormat: RecordingFileFormat? = nil,
     recordingQuality: RecordingQuality? = nil,
+    gifExportQuality: GIFExportQuality? = nil,
     debugModeEnabled: Bool? = nil
   ) -> RecordingSettings {
     var copy = self
@@ -28,6 +29,9 @@ public extension RecordingSettings {
     }
     if let recordingQuality {
       copy.recordingQuality = recordingQuality
+    }
+    if let gifExportQuality {
+      copy.gifExportQuality = gifExportQuality
     }
     if let debugModeEnabled {
       copy.isDebugModeEnabled = debugModeEnabled
