@@ -5,7 +5,7 @@ import XCTest
 final class CaptureThisTests: XCTestCase {
   func testMenuBarRecordButtonTitles() {
     XCTAssertEqual(MenuBarView.recordButtonTitle(for: .idle), "Record")
-    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .recording(isPaused: false)), "Stop")
+    XCTAssertEqual(MenuBarView.recordButtonTitle(for: .recording(isPaused: false)), "Stop Recording")
     XCTAssertEqual(MenuBarView.recordButtonTitle(for: .recording(isPaused: true)), "Paused")
     XCTAssertEqual(MenuBarView.recordButtonTitle(for: .countdown(2)), "Counting down…")
     XCTAssertEqual(MenuBarView.recordButtonTitle(for: .pickingSource), "Picking source…")
@@ -23,6 +23,35 @@ final class CaptureThisTests: XCTestCase {
     XCTAssertTrue(MenuBarView.isRecordButtonDisabled(for: .countdown(1)))
     XCTAssertTrue(MenuBarView.isRecordButtonDisabled(for: .pickingSource))
     XCTAssertTrue(MenuBarView.isRecordButtonDisabled(for: .stopping))
+  }
+
+  func testPermissionSetupStateBlocksRecordingUntilStatusesLoad() {
+    XCTAssertTrue(PermissionSetupState().blocksRecording)
+  }
+
+  func testPermissionSetupStateBlocksRecordingForMissingRequiredItem() {
+    let state = PermissionSetupState(items: [
+      PermissionSetupItem(kind: .screenRecording, status: .granted, isRequired: true),
+      PermissionSetupItem(kind: .saveFolder, status: .notDetermined, isRequired: true),
+      PermissionSetupItem(kind: .notifications, status: .notDetermined, isRequired: false)
+    ])
+
+    XCTAssertTrue(state.blocksRecording)
+  }
+
+  func testPermissionSetupStateAllowsRecordingWhenRequiredItemsAreGranted() {
+    let state = PermissionSetupState(items: [
+      PermissionSetupItem(kind: .screenRecording, status: .granted, isRequired: true),
+      PermissionSetupItem(kind: .saveFolder, status: .granted, isRequired: true),
+      PermissionSetupItem(kind: .notifications, status: .notDetermined, isRequired: false)
+    ])
+
+    XCTAssertFalse(state.blocksRecording)
+  }
+
+  func testDeniedPermissionActionOpensSettings() {
+    let item = PermissionSetupItem(kind: .camera, status: .denied, isRequired: true)
+    XCTAssertEqual(item.actionTitle, "Open Settings")
   }
 
   func testRecordingHUDHelpers() {

@@ -6,31 +6,72 @@ struct SettingsView: View {
 
   var body: some View {
     Form {
-      Section("Recording") {
-        Stepper(
-          value: Binding(
-            get: { appState.settings.countdownSeconds },
-            set: { appState.updateSettings(appState.settings.updating(countdownSeconds: $0)) }
-          ),
-          in: 0 ... 10
-        ) {
-          Text("Countdown: \(appState.settings.countdownSeconds)s")
+      Section {
+        PermissionsSetupView(
+          state: appState.permissionSetupState,
+          action: appState.performPermissionSetupAction(for:)
+        )
+      } header: {
+        HStack {
+          Text("Permissions")
+          Spacer()
+          Button {
+            appState.refreshPermissionSetupState()
+          } label: {
+            Label("Recheck", systemImage: "arrow.clockwise")
+          }
+          .buttonStyle(.borderless)
+          .font(Theme.Typography.rowDetail)
+          .help("Check permissions again")
         }
+      } footer: {
+        Text("CaptureThis needs these to record. Optional ones can stay off.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
 
-      Section("Defaults") {
-        Toggle("Camera enabled", isOn: Binding(
-          get: { appState.settings.isCameraEnabled },
-          set: { appState.updateSettings(appState.settings.updating(cameraEnabled: $0)) }
-        ))
-        Toggle("Microphone enabled", isOn: Binding(
-          get: { appState.settings.isMicrophoneEnabled },
-          set: { appState.updateSettings(appState.settings.updating(microphoneEnabled: $0)) }
-        ))
-        Toggle("System audio enabled", isOn: Binding(
-          get: { appState.settings.isSystemAudioEnabled },
-          set: { appState.updateSettings(appState.settings.updating(systemAudioEnabled: $0)) }
-        ))
+      Section {
+        VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
+          HStack {
+            Text("Countdown")
+            Spacer()
+            Text("\(appState.settings.countdownSeconds)s")
+              .foregroundStyle(.secondary)
+              .monospacedDigit()
+          }
+          Slider(
+            value: Binding(
+              get: { Double(appState.settings.countdownSeconds) },
+              set: { appState.updateSettings(appState.settings.updating(countdownSeconds: Int($0.rounded()))) }
+            ),
+            in: 0 ... 10,
+            step: 1
+          )
+        }
+      } header: {
+        Text("Recording")
+      } footer: {
+        Text("Delay before capture begins after you hit Record.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+
+      Section {
+        Toggle(isOn: cameraBinding) {
+          Label("Camera overlay", systemImage: "camera")
+        }
+        Toggle(isOn: microphoneBinding) {
+          Label("Microphone", systemImage: "mic")
+        }
+        Toggle(isOn: systemAudioBinding) {
+          Label("System audio", systemImage: "speaker.wave.2")
+        }
+      } header: {
+        Text("Capture Defaults")
+      } footer: {
+        Text("Applied to every new recording. Requires the matching permission above.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
 
       Section("Output") {
@@ -53,8 +94,32 @@ struct SettingsView: View {
         }
       }
     }
-    .padding(20)
-    .frame(width: 420)
+    .formStyle(.grouped)
+    .frame(minWidth: 440, idealWidth: 480, maxWidth: 720, minHeight: 480, idealHeight: 600, maxHeight: .infinity)
+    .onAppear {
+      appState.refreshPermissionSetupState()
+    }
+  }
+
+  private var cameraBinding: Binding<Bool> {
+    Binding(
+      get: { appState.settings.isCameraEnabled },
+      set: { appState.updateSettings(appState.settings.updating(cameraEnabled: $0)) }
+    )
+  }
+
+  private var microphoneBinding: Binding<Bool> {
+    Binding(
+      get: { appState.settings.isMicrophoneEnabled },
+      set: { appState.updateSettings(appState.settings.updating(microphoneEnabled: $0)) }
+    )
+  }
+
+  private var systemAudioBinding: Binding<Bool> {
+    Binding(
+      get: { appState.settings.isSystemAudioEnabled },
+      set: { appState.updateSettings(appState.settings.updating(systemAudioEnabled: $0)) }
+    )
   }
 }
 

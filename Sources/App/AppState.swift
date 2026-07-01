@@ -23,6 +23,7 @@ final class AppState: ObservableObject {
   @Published var errorMessage: String?
   @Published var presenterOverlayEnabled = false
   @Published var recordingStartDate: Date?
+  @Published var permissionSetupState = PermissionSetupState()
 
   let engine: RecordingEngine
   let cameraService = CameraService()
@@ -31,6 +32,7 @@ final class AppState: ObservableObject {
 
   private let contentSelector: GUIContentSelector
   private let directoryProvider: SandboxedDirectoryProvider
+  let fileAccessService: FileAccessService
 
   lazy var hudController = HUDWindowController(appState: self)
 
@@ -39,9 +41,11 @@ final class AppState: ObservableObject {
     settings = loadedSettings
 
     let selector = GUIContentSelector()
-    let dirProvider = SandboxedDirectoryProvider()
+    let fileAccess = FileAccessService()
+    let dirProvider = SandboxedDirectoryProvider(fileAccessService: fileAccess)
     contentSelector = selector
     directoryProvider = dirProvider
+    fileAccessService = fileAccess
 
     // Engine init needs observer; use temporary, reassign after init
     engine = RecordingEngine(
@@ -58,10 +62,18 @@ final class AppState: ObservableObject {
   }
 
   func startOrStopRecording() {
+    if recordingState == .idle, permissionSetupState.blocksRecording {
+      openSetupForMissingPermissions()
+      return
+    }
     engine.startOrStop()
   }
 
   func startRecording() {
+    if permissionSetupState.blocksRecording {
+      openSetupForMissingPermissions()
+      return
+    }
     engine.start()
   }
 
