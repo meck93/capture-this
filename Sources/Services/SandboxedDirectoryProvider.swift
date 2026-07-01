@@ -5,8 +5,8 @@ final class SandboxedDirectoryProvider: OutputDirectoryProvider, @unchecked Send
   private let fileAccessService: FileAccessService
 
   @MainActor
-  init() {
-    fileAccessService = FileAccessService()
+  init(fileAccessService: FileAccessService) {
+    self.fileAccessService = fileAccessService
   }
 
   func recordingsDirectory() async throws -> URL {
