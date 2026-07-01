@@ -1,39 +1,90 @@
 import CaptureThisCore
 import SwiftUI
 
+/// The permissions list adapts to where it lives: `.settings` sits inside a
+/// Form section that already draws a card, so it renders as a plain divided
+/// table; `.popover` is standalone, so it wraps each group in its own card and
+/// reveals reasons on hover to stay compact.
+enum PermissionsSetupStyle {
+  case settings
+  case popover
+}
+
 struct PermissionsSetupView: View {
   let state: PermissionSetupState
+  var style: PermissionsSetupStyle = .popover
   let action: (PermissionSetupKind) -> Void
 
+  private var requiredItems: [PermissionSetupItem] {
+    state.items.filter(\.isRequired)
+  }
+
+  private var optionalItems: [PermissionSetupItem] {
+    state.items.filter { !$0.isRequired }
+  }
+
+  private var isPlain: Bool {
+    style == .settings
+  }
+
   var body: some View {
-    VStack(spacing: 0) {
-      ForEach(Array(state.items.enumerated()), id: \.element.id) { index, item in
-        if index > 0 {
-          Divider()
+    VStack(alignment: .leading, spacing: isPlain ? Theme.Spacing.sm : Theme.Spacing.md) {
+      group("Required", items: requiredItems)
+      group("Optional", items: optionalItems)
+    }
+  }
+
+  @ViewBuilder
+  private func group(_ title: String, items: [PermissionSetupItem]) -> some View {
+    if !items.isEmpty {
+      VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+        Text(title.uppercased())
+          .font(Theme.Typography.badge)
+          .foregroundStyle(.tertiary)
+          .padding(.horizontal, Theme.Spacing.xxs)
+
+        VStack(spacing: 0) {
+          ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+            if index > 0 {
+              Divider()
+            }
+            PermissionSetupRow(item: item, style: style) {
+              action(item.kind)
+            }
+          }
         }
-        PermissionSetupRow(item: item) {
-          action(item.kind)
-        }
+        .background(groupBackground)
       }
     }
-    .overlay(
-      Rectangle()
-        .frame(height: 1)
-        .foregroundStyle(Color.primary.opacity(0.08)),
-      alignment: .top
-    )
-    .overlay(
-      Rectangle()
-        .frame(height: 1)
-        .foregroundStyle(Color.primary.opacity(0.08)),
-      alignment: .bottom
-    )
+  }
+
+  // The popover has no surrounding card, so each group gets its own; Settings
+  // leans on the Form section's card and stays flat to avoid box-in-box.
+  @ViewBuilder
+  private var groupBackground: some View {
+    if isPlain {
+      Color.clear
+    } else {
+      RoundedRectangle(cornerRadius: Theme.Radius.sm, style: .continuous)
+        .fill(Theme.Palette.subtleFill)
+    }
   }
 }
 
 private struct PermissionSetupRow: View {
   let item: PermissionSetupItem
+  let style: PermissionsSetupStyle
   let action: () -> Void
+
+  @State private var isHovering = false
+
+  private var alwaysShowsDetail: Bool {
+    style == .settings
+  }
+
+  private var showsDetail: Bool {
+    alwaysShowsDetail || isHovering
+  }
 
   var body: some View {
     HStack(alignment: .center, spacing: Theme.Spacing.sm) {
@@ -43,46 +94,35 @@ private struct PermissionSetupRow: View {
         .frame(width: 18)
 
       VStack(alignment: .leading, spacing: Theme.Spacing.xxs) {
-        HStack(spacing: Theme.Spacing.xs + 2) {
-          Text(item.kind.title)
-            .font(Theme.Typography.rowTitle)
-            .foregroundStyle(item.status.isGranted ? .secondary : .primary)
-          // Granted is self-evident from the green check; only badge the
-          // states that carry extra info (Required / Optional / Denied …).
-          if !item.status.isGranted {
-            statusBadge
-          }
+        Text(item.kind.title)
+          .font(Theme.Typography.rowTitle)
+          .foregroundStyle(item.status.isGranted ? .secondary : .primary)
+
+        // Settings keeps every reason on screen; the popover surfaces them on
+        // hover so its resting list stays a calm column of names.
+        if showsDetail {
+          Text(item.kind.detail)
+            .font(Theme.Typography.rowDetail)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .transition(.opacity)
         }
-        Text(item.kind.detail)
-          .font(Theme.Typography.rowDetail)
-          .foregroundStyle(.secondary)
-          .fixedSize(horizontal: false, vertical: true)
       }
 
       Spacer(minLength: Theme.Spacing.sm)
 
       if let actionTitle = item.actionTitle {
         Button(actionTitle, action: action)
-          .buttonStyle(CapsuleActionButtonStyle(tint: actionTint))
+          .buttonStyle(CapsuleActionButtonStyle())
       }
     }
     .padding(.vertical, Theme.Spacing.sm)
-    .padding(.horizontal, Theme.Spacing.xxs)
-    .background(needsAttention ? Theme.Palette.warning.opacity(0.06) : .clear)
-  }
-
-  private var statusBadge: some View {
-    Text(item.statusTitle.uppercased())
-      .font(Theme.Typography.badge)
-      .foregroundStyle(symbolColor)
-      .padding(.horizontal, Theme.Spacing.xs + 1)
-      .padding(.vertical, 1)
-      .background(Capsule().fill(symbolColor.opacity(0.15)))
-  }
-
-  /// A required, not-yet-granted permission is the only thing that should feel urgent.
-  private var needsAttention: Bool {
-    item.isRequired && !item.status.isGranted
+    .padding(.horizontal, alwaysShowsDetail ? Theme.Spacing.xxs : Theme.Spacing.sm)
+    .contentShape(Rectangle())
+    .onHover { hovering in
+      guard !alwaysShowsDetail else { return }
+      withAnimation(.easeOut(duration: 0.12)) { isHovering = hovering }
+    }
   }
 
   private var symbolName: String {
@@ -92,10 +132,12 @@ private struct PermissionSetupRow: View {
     case .denied:
       "exclamationmark.triangle.fill"
     case .notDetermined, .unknown:
-      item.isRequired ? "exclamationmark.circle" : "bell"
+      "circle"
     }
   }
 
+  // Only a genuine denial earns an alarm color. A not-yet-granted permission
+  // is the expected first-run state, so it stays neutral instead of screaming.
   private var symbolColor: Color {
     switch item.status {
     case .granted:
@@ -103,11 +145,7 @@ private struct PermissionSetupRow: View {
     case .denied:
       Theme.Palette.danger
     case .notDetermined, .unknown:
-      item.isRequired ? Theme.Palette.warning : .secondary
+      Color.secondary
     }
-  }
-
-  private var actionTint: Color {
-    needsAttention ? Theme.Palette.warning : Theme.Palette.accent
   }
 }
