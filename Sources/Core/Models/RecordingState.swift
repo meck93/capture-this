@@ -9,7 +9,9 @@ public enum RecordingState: Equatable, Sendable {
   case error(String)
 
   public var isRecording: Bool {
-    if case .recording = self { return true }
+    if case .recording = self {
+      return true
+    }
     return false
   }
 

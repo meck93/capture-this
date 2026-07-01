@@ -219,6 +219,8 @@ private struct RecordingRow: View {
       Menu {
         Button("Open") { appState.openRecording(recording) }
         Button("Reveal in Finder") { appState.revealRecording(recording) }
+        Button(gifExportTitle) { appState.exportGIF(for: recording) }
+          .disabled(appState.gifExportState.isExporting(recording))
       } label: {
         Image(systemName: "ellipsis")
           .font(.system(size: 12))
@@ -246,8 +248,16 @@ private struct RecordingRow: View {
       Button("Reveal in Finder") {
         appState.revealRecording(recording)
       }
+      Button(gifExportTitle) { appState.exportGIF(for: recording) }
+        .disabled(appState.gifExportState.isExporting(recording))
     }
     .help("Open \(recording.url.lastPathComponent)")
+  }
+
+  private var gifExportTitle: String {
+    appState.gifExportState.isExporting(recording)
+      ? String(localized: "Exporting GIF…")
+      : String(localized: "Export as GIF")
   }
 
   private var subtitle: String {

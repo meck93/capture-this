@@ -85,11 +85,20 @@ struct SettingsView: View {
           }
         }
 
-        Picker("Quality", selection: Binding(
+        Picker("Video Quality", selection: Binding(
           get: { appState.settings.recordingQuality },
           set: { appState.updateSettings(appState.settings.updating(recordingQuality: $0)) }
         )) {
           ForEach(RecordingQuality.allCases) { quality in
+            Text(quality.displayName).tag(quality)
+          }
+        }
+
+        Picker("GIF Quality", selection: Binding(
+          get: { appState.settings.gifExportQuality },
+          set: { appState.updateSettings(appState.settings.updating(gifExportQuality: $0)) }
+        )) {
+          ForEach(GIFExportQuality.allCases) { quality in
             Text(quality.displayName).tag(quality)
           }
         }

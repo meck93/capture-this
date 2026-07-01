@@ -199,7 +199,9 @@ final class RecordingEnginePauseResumeTests: XCTestCase {
   ) async {
     let deadline = Date().addingTimeInterval(timeout)
     while Date() < deadline {
-      if check() { return }
+      if check() {
+        return
+      }
       try? await Task.sleep(nanoseconds: 10_000_000)
     }
     XCTFail("Timed out waiting for condition")

@@ -21,7 +21,7 @@ run = "swiftformat ."
 
 [tasks.build]
 description = "Build the app"
-run = "xcodebuild -scheme CaptureThis -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"
+run = ["mise run generate", "xcodebuild -scheme CaptureThis -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"]
 
 [tasks.test]
 description = "Run unit tests"

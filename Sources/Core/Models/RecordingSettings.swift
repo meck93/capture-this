@@ -36,6 +36,43 @@ public enum RecordingQuality: String, Codable, CaseIterable, Identifiable, Senda
   }
 }
 
+public enum GIFExportQuality: String, Codable, CaseIterable, Identifiable, Sendable {
+  case compact
+  case balanced
+  case high
+
+  public var id: String {
+    rawValue
+  }
+
+  public var displayName: String {
+    switch self {
+    case .compact:
+      String(localized: "Compact", bundle: .captureThisCore)
+    case .balanced:
+      String(localized: "Balanced", bundle: .captureThisCore)
+    case .high:
+      String(localized: "High", bundle: .captureThisCore)
+    }
+  }
+
+  public var targetWidth: Double {
+    switch self {
+    case .compact: 1080
+    case .balanced: 1440
+    case .high: 2160
+    }
+  }
+
+  public var framesPerSecond: Double {
+    switch self {
+    case .compact: 15
+    case .balanced: 24
+    case .high: 24
+    }
+  }
+}
+
 public struct RecordingSettings: Codable, Sendable {
   public var countdownSeconds: Int
   public var isCameraEnabled: Bool
@@ -43,6 +80,7 @@ public struct RecordingSettings: Codable, Sendable {
   public var isSystemAudioEnabled: Bool
   public var outputFormat: RecordingFileFormat
   public var recordingQuality: RecordingQuality
+  public var gifExportQuality: GIFExportQuality
   public var isDebugModeEnabled: Bool
 
   public init(
@@ -52,6 +90,7 @@ public struct RecordingSettings: Codable, Sendable {
     isSystemAudioEnabled: Bool = false,
     outputFormat: RecordingFileFormat = .mp4,
     recordingQuality: RecordingQuality = .standard,
+    gifExportQuality: GIFExportQuality = .balanced,
     isDebugModeEnabled: Bool = false
   ) {
     self.countdownSeconds = countdownSeconds
@@ -60,6 +99,7 @@ public struct RecordingSettings: Codable, Sendable {
     self.isSystemAudioEnabled = isSystemAudioEnabled
     self.outputFormat = outputFormat
     self.recordingQuality = recordingQuality
+    self.gifExportQuality = gifExportQuality
     self.isDebugModeEnabled = isDebugModeEnabled
   }
 
@@ -76,6 +116,7 @@ public struct RecordingSettings: Codable, Sendable {
     isSystemAudioEnabled = try value(.isSystemAudioEnabled, defaults.isSystemAudioEnabled)
     outputFormat = try value(.outputFormat, defaults.outputFormat)
     recordingQuality = try value(.recordingQuality, defaults.recordingQuality)
+    gifExportQuality = try value(.gifExportQuality, defaults.gifExportQuality)
     isDebugModeEnabled = try value(.isDebugModeEnabled, defaults.isDebugModeEnabled)
   }
 }

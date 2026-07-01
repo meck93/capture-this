@@ -10,7 +10,9 @@ public enum RecordingStore {
     do {
       let recordings = try JSONDecoder().decode([Recording].self, from: data)
       let existing = recordings.filter { FileManager.default.fileExists(atPath: $0.url.path) }
-      if existing.count != recordings.count { save(existing) }
+      if existing.count != recordings.count {
+        save(existing)
+      }
       return existing
     } catch {
       return []
