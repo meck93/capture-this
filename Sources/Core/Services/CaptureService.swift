@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import os
 import ScreenCaptureKit
 
 public final class CaptureService: NSObject {
@@ -73,6 +74,7 @@ public final class CaptureService: NSObject {
   let streamBuilder: any CaptureStreamBuilding
   let recordingOutputBuilder: any CaptureRecordingOutputBuilding
   let stateLock = NSLock()
+  let logger = Logger(subsystem: "com.capturethis.CaptureThis", category: "Capture")
 
   override public convenience init() {
     self.init(
