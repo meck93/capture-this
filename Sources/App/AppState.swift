@@ -24,11 +24,13 @@ final class AppState: ObservableObject {
   @Published var presenterOverlayEnabled = false
   @Published var recordingStartDate: Date?
   @Published var permissionSetupState = PermissionSetupState()
+  @Published var gifExportState: GIFExportState = .idle
 
   let engine: RecordingEngine
   let cameraService = CameraService()
   let hotKeyService = HotKeyService()
   let notificationService = NotificationService.shared
+  let gifExportService = GIFExportService()
 
   private let contentSelector: GUIContentSelector
   private let directoryProvider: SandboxedDirectoryProvider
@@ -142,5 +144,17 @@ final class AppState: ObservableObject {
         openSetupForMissingPermissions()
       }
     }
+  }
+}
+
+enum GIFExportState: Equatable {
+  case idle
+  case exporting(UUID)
+
+  func isExporting(_ recording: Recording) -> Bool {
+    if case let .exporting(id) = self {
+      return id == recording.id
+    }
+    return false
   }
 }
