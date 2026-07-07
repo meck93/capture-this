@@ -19,7 +19,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup mise
         uses: jdx/mise-action@v2
@@ -97,15 +97,21 @@ jobs:
             echo "DMG_SHA256=$dmg_sha256"
           } >> "$GITHUB_ENV"
 
-      - name: Create GitHub release
+      - name: Create draft GitHub release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_TAG }}
           generate_release_notes: true
+          draft: true
           files: |
             artifacts/CaptureThis.app.zip
             artifacts/CaptureThis.dmg
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${{ env.RELEASE_TAG }}" --draft=false
 
       - name: Create Homebrew tap token
         id: app-token
