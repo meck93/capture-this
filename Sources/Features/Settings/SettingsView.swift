@@ -75,6 +75,11 @@ struct SettingsView: View {
           .foregroundStyle(.secondary)
       }
 
+      KeyboardShortcutsSettingsSection(
+        settings: keyboardShortcutsBinding,
+        errorMessage: appState.shortcutErrorMessage
+      )
+
       Section("Output") {
         Picker("Format", selection: Binding(
           get: { appState.settings.outputFormat },
@@ -148,6 +153,13 @@ struct SettingsView: View {
     Binding(
       get: { appState.settings.isDebugModeEnabled },
       set: { appState.updateSettings(appState.settings.updating(debugModeEnabled: $0)) }
+    )
+  }
+
+  private var keyboardShortcutsBinding: Binding<KeyboardShortcutSettings> {
+    Binding(
+      get: { appState.settings.keyboardShortcuts },
+      set: { appState.updateSettings(appState.settings.updating(keyboardShortcuts: $0)) }
     )
   }
 }

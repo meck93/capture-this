@@ -82,6 +82,7 @@ public struct RecordingSettings: Codable, Sendable {
   public var recordingQuality: RecordingQuality
   public var gifExportQuality: GIFExportQuality
   public var isDebugModeEnabled: Bool
+  public var keyboardShortcuts: KeyboardShortcutSettings
 
   public init(
     countdownSeconds: Int = 3,
@@ -91,7 +92,8 @@ public struct RecordingSettings: Codable, Sendable {
     outputFormat: RecordingFileFormat = .mp4,
     recordingQuality: RecordingQuality = .standard,
     gifExportQuality: GIFExportQuality = .balanced,
-    isDebugModeEnabled: Bool = false
+    isDebugModeEnabled: Bool = false,
+    keyboardShortcuts: KeyboardShortcutSettings = KeyboardShortcutSettings()
   ) {
     self.countdownSeconds = countdownSeconds
     self.isCameraEnabled = isCameraEnabled
@@ -101,6 +103,7 @@ public struct RecordingSettings: Codable, Sendable {
     self.recordingQuality = recordingQuality
     self.gifExportQuality = gifExportQuality
     self.isDebugModeEnabled = isDebugModeEnabled
+    self.keyboardShortcuts = keyboardShortcuts
   }
 
   /// Tolerant decoding so settings persisted before a field existed still load.
@@ -118,5 +121,6 @@ public struct RecordingSettings: Codable, Sendable {
     recordingQuality = try value(.recordingQuality, defaults.recordingQuality)
     gifExportQuality = try value(.gifExportQuality, defaults.gifExportQuality)
     isDebugModeEnabled = try value(.isDebugModeEnabled, defaults.isDebugModeEnabled)
+    keyboardShortcuts = try value(.keyboardShortcuts, defaults.keyboardShortcuts)
   }
 }

@@ -9,7 +9,8 @@ public extension RecordingSettings {
     outputFormat: RecordingFileFormat? = nil,
     recordingQuality: RecordingQuality? = nil,
     gifExportQuality: GIFExportQuality? = nil,
-    debugModeEnabled: Bool? = nil
+    debugModeEnabled: Bool? = nil,
+    keyboardShortcuts: KeyboardShortcutSettings? = nil
   ) -> RecordingSettings {
     var copy = self
     if let countdownSeconds {
@@ -35,6 +36,9 @@ public extension RecordingSettings {
     }
     if let debugModeEnabled {
       copy.isDebugModeEnabled = debugModeEnabled
+    }
+    if let keyboardShortcuts {
+      copy.keyboardShortcuts = keyboardShortcuts
     }
     return copy
   }

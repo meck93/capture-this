@@ -285,17 +285,24 @@ Contains:
 
 ---
 
-## 11. Keyboard Shortcuts (Defaults)
+## 11. Keyboard Shortcuts
 
-| Action         | Shortcut | Customizable |
-| -------------- | -------- | ------------ |
-| Start / Stop   | ⌘⇧R      | ✅            |
-| Pause / Resume | ⌘⇧P      | ✅            |
-| Cancel         | Escape   | ❌            |
-| Toggle HUD     | ⌘⇧H      | ✅            |
-| Open App       | ⌘⇧C      | ✅            |
+Global keyboard shortcuts are disabled by default so CaptureThis does not interfere with shortcuts in the user's other apps.
 
-If hotkey registration fails, app must surface a clear error and allow reassignment.
+Settings must provide one master **Enable global shortcuts** toggle and editable rows for:
+
+| Action         | Default Shortcut | Registration scope |
+| -------------- | ---------------- | ------------------ |
+| Start / Stop   | ⌘⇧R              | While global shortcuts are enabled |
+| Pause / Resume | Not set          | While recording and global shortcuts are enabled |
+| Cancel         | Escape           | During source selection/countdown and global shortcuts are enabled |
+| Toggle CaptureThis | ⌘⇧C          | While global shortcuts are enabled |
+
+Each row can record a new key combination or be cleared. A cleared shortcut is disabled. There are no separate per-action enable toggles.
+
+Shortcut settings are persisted with the other recording settings and apply immediately. The settings UI must reject duplicate CaptureThis shortcuts, preserve the previous binding if registration fails, and provide a **Reset to Defaults** action. The default Pause / Resume binding must not be ⌘⇧P because that is a common command-palette shortcut in developer tools.
+
+Global registration must be state-aware: Pause / Resume must not be registered outside an active recording, and Cancel must not be registered outside source selection or the countdown. Local HUD and popover keyboard behavior remains local to those windows.
 
 ---
 
@@ -373,4 +380,3 @@ If you want, next steps could be:
 * a **1-page engineering kickoff brief**
 * a **task breakdown per week**
 * or a **risk checklist specific to ScreenCaptureKit + Presenter Overlay**
-
