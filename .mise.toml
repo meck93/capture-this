@@ -33,7 +33,7 @@ run = "xcodebuild -scheme CaptureThis -configuration Debug -derivedDataPath .bui
 
 [tasks.release-build]
 description = "Build a release app bundle"
-run = "xcodebuild -scheme CaptureThis -configuration Release -derivedDataPath .build -destination 'platform=macOS' build"
+run = "xcodebuild -scheme CaptureThis -configuration Release -derivedDataPath .build -destination 'platform=macOS' ${MARKETING_VERSION:+MARKETING_VERSION=$MARKETING_VERSION} ${CURRENT_PROJECT_VERSION:+CURRENT_PROJECT_VERSION=$CURRENT_PROJECT_VERSION} build"
 
 [tasks.package]
 description = "Package .app.zip and .dmg"
