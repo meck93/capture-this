@@ -12,8 +12,12 @@ description = "Generate the Xcode project"
 run = "xcodegen generate"
 
 [tasks.lint]
-description = "Run SwiftLint and SwiftFormat in lint mode"
-run = ["swiftlint --strict", "swiftformat --lint ."]
+description = "Run localization, SwiftLint, and SwiftFormat checks"
+run = ["mise run localization-lint", "swiftlint --strict", "swiftformat --lint ."]
+
+[tasks.localization-lint]
+description = "Validate English and German localization coverage"
+run = "bash Scripts/validate-localizations.sh"
 
 [tasks.format]
 description = "Format Swift code with SwiftFormat"
@@ -29,7 +33,7 @@ run = "xcodebuild -scheme CaptureThis -configuration Debug -derivedDataPath .bui
 
 [tasks.release-build]
 description = "Build a release app bundle"
-run = "xcodebuild -scheme CaptureThis -configuration Release -derivedDataPath .build -destination 'platform=macOS' build"
+run = "xcodebuild -scheme CaptureThis -configuration Release -derivedDataPath .build -destination 'platform=macOS' ${MARKETING_VERSION:+MARKETING_VERSION=$MARKETING_VERSION} ${CURRENT_PROJECT_VERSION:+CURRENT_PROJECT_VERSION=$CURRENT_PROJECT_VERSION} build"
 
 [tasks.package]
 description = "Package .app.zip and .dmg"

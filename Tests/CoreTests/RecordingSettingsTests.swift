@@ -11,6 +11,8 @@ final class RecordingSettingsTests: XCTestCase {
     XCTAssertEqual(settings.outputFormat, .mp4)
     XCTAssertEqual(settings.recordingQuality, .standard)
     XCTAssertEqual(settings.gifExportQuality, .balanced)
+    XCTAssertFalse(settings.keyboardShortcuts.isEnabled)
+    XCTAssertNil(settings.keyboardShortcuts.pauseResume)
   }
 
   func testUpdating() {

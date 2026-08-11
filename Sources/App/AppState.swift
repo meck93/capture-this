@@ -10,7 +10,7 @@ final class AppState: ObservableObject {
 
   @Published var recordingState: RecordingState = .idle {
     didSet {
-      hotKeyService.setCancelHotKeyEnabled(recordingState.shouldEnableCancelHotKey)
+      hotKeyService.setRecordingState(recordingState)
     }
   }
 
@@ -21,6 +21,7 @@ final class AppState: ObservableObject {
 
   @Published var recentRecordings: [Recording]
   @Published var errorMessage: String?
+  @Published var shortcutErrorMessage: String?
   @Published var presenterOverlayEnabled = false
   @Published var recordingStartDate: Date?
   @Published var permissionSetupState = PermissionSetupState()
@@ -93,6 +94,12 @@ final class AppState: ObservableObject {
 
   func updateSettings(_ newSettings: RecordingSettings) {
     let previous = settings
+
+    if previous.keyboardShortcuts != newSettings.keyboardShortcuts {
+      guard hotKeyService.updateShortcutSettings(newSettings.keyboardShortcuts) else { return }
+      shortcutErrorMessage = nil
+    }
+
     settings = newSettings
     engine.updateSettings(newSettings)
     refreshPermissionSetupState()

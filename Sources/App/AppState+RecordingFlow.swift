@@ -73,21 +73,20 @@ extension AppState {
           self?.cancelRecording()
         }
       },
-      toggleHUD: { [weak self] in
-        Task { @MainActor in
-          self?.toggleHUD()
-        }
-      },
       openApp: { [weak self] in
         Task { @MainActor in
-          self?.openMenuBarPopover()
+          self?.toggleMenuBarPopover()
         }
       }
     )
 
-    hotKeyService.configure(handlers: handlers) { [weak self] error in
+    hotKeyService.configure(
+      handlers: handlers,
+      settings: settings.keyboardShortcuts,
+      recordingState: recordingState
+    ) { [weak self] error in
       Task { @MainActor in
-        self?.errorMessage = error.localizedDescription
+        self?.shortcutErrorMessage = error.localizedDescription
       }
     }
   }
@@ -97,16 +96,11 @@ extension AppState {
     engine.pauseResume()
   }
 
-  func toggleHUD() {
-    if hudController.isVisible {
-      hudController.hide()
-    } else if recordingState != .idle {
-      hudController.show()
-    }
+  func toggleMenuBarPopover() {
+    AppDelegate.shared?.togglePopover(nil)
   }
 
   func openMenuBarPopover() {
-    NSApp.activate(ignoringOtherApps: true)
     AppDelegate.shared?.showPopover()
   }
 }

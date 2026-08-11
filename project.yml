@@ -14,8 +14,8 @@ packages:
 
 settings:
   base:
-    MARKETING_VERSION: 0.1.0
-    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 0.4.0
+    CURRENT_PROJECT_VERSION: 4
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: ED6SQQN53H
 
@@ -46,6 +46,8 @@ targets:
     info:
       path: Config/Info.plist
       properties:
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         NSCameraUsageDescription: CaptureThis uses the camera for picture-in-picture recording.
         NSMicrophoneUsageDescription: CaptureThis uses the microphone to record your voice.
         NSScreenCaptureUsageDescription: CaptureThis records your screen to create videos.

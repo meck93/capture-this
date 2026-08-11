@@ -32,6 +32,26 @@ jobs:
       - name: Install tools
         run: mise install
 
+      - name: Set release metadata
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            version="${{ inputs.version }}"
+            release_tag="v${version}"
+          else
+            release_tag="${GITHUB_REF_NAME}"
+            version="${release_tag#v}"
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)*([_-][A-Za-z0-9.-]+)?$ ]]; then
+            echo "Invalid release version: $version" >&2
+            exit 1
+          fi
+
+          {
+            echo "RELEASE_VERSION=$version"
+            echo "RELEASE_TAG=$release_tag"
+          } >> "$GITHUB_ENV"
+
       - name: Install signing assets
         env:
           MACOS_DEV_CERT_P12_B64: ${{ secrets.MACOS_DEV_CERT_P12_B64 }}
@@ -69,33 +89,16 @@ jobs:
         run: mise run test
 
       - name: Build release
-        run: mise run release-build
+        run: MARKETING_VERSION="${{ env.RELEASE_VERSION }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" mise run release-build
 
       - name: Package artifacts
         run: mise run package
 
-      - name: Set release metadata
+      - name: Set artifact metadata
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            version="${{ inputs.version }}"
-            release_tag="v${version}"
-          else
-            release_tag="${GITHUB_REF_NAME}"
-            version="${release_tag#v}"
-          fi
-
-          if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)*([_-][A-Za-z0-9.-]+)?$ ]]; then
-            echo "Invalid release version: $version" >&2
-            exit 1
-          fi
-
           dmg_sha256="$(shasum -a 256 artifacts/CaptureThis.dmg | awk '{print $1}')"
 
-          {
-            echo "RELEASE_VERSION=$version"
-            echo "RELEASE_TAG=$release_tag"
-            echo "DMG_SHA256=$dmg_sha256"
-          } >> "$GITHUB_ENV"
+          echo "DMG_SHA256=$dmg_sha256" >> "$GITHUB_ENV"
 
       - name: Create draft GitHub release
         uses: softprops/action-gh-release@v3
