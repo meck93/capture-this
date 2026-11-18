@@ -5,7 +5,7 @@ experimental = true
 swift = "latest"
 xcodegen = "latest"
 swiftlint = "latest"
-swiftformat = "latest"
+swiftformat = "0.63.0"
 
 [tasks.generate]
 description = "Generate the Xcode project"
