@@ -26,8 +26,8 @@ targets:
     deploymentTarget: "15.2"
     sources:
       - path: ../../packages/capture-this-core/Sources
-    resources:
       - path: Resources/Localizable.xcstrings
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisCore
@@ -41,8 +41,8 @@ targets:
       - path: Sources/App
       - path: Sources/Features
       - path: Sources/Services
-    resources:
       - path: Resources
+        buildPhase: resources
     info:
       path: Config/Info.plist
       properties:

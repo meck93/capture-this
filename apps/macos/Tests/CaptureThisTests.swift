@@ -3,6 +3,17 @@ import CaptureThisCore
 import XCTest
 
 final class CaptureThisTests: XCTestCase {
+  func testEnglishAndGermanResourcesAreBundled() {
+    let appBundle = Bundle.main
+    let coreBundle = Bundle(for: RecordingEngine.self)
+
+    for language in ["en", "de"] {
+      XCTAssertNotNil(appBundle.path(forResource: "InfoPlist", ofType: "strings", inDirectory: "\(language).lproj"))
+      XCTAssertNotNil(appBundle.path(forResource: "Localizable", ofType: "strings", inDirectory: "\(language).lproj"))
+      XCTAssertNotNil(coreBundle.path(forResource: "Localizable", ofType: "strings", inDirectory: "\(language).lproj"))
+    }
+  }
+
   func testMenuBarRecordButtonTitles() {
     XCTAssertEqual(MenuBarView.recordButtonTitle(for: .idle), String(localized: "Record"))
     XCTAssertEqual(MenuBarView.recordButtonTitle(for: .recording(isPaused: false)), String(localized: "Stop Recording"))
