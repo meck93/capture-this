@@ -173,6 +173,7 @@ jobs:
           ruby -pi -e 'gsub(/sha256 "[^"]+"/, "sha256 \"#{ENV.fetch("DMG_SHA256")}\"")' "$tap_dir/Casks/capture-this.rb"
 
           cd "$tap_dir"
+          HOMEBREW_NO_AUTO_UPDATE=1 brew trust --cask meck93/tap/capture-this
           HOMEBREW_NO_AUTO_UPDATE=1 brew audit --cask meck93/tap/capture-this
 
           git config user.name "github-actions[bot]"
