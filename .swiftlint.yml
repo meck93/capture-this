@@ -1,6 +1,9 @@
 included:
-  - Sources
-  - Tests
+  - apps/macos/Sources
+  - apps/macos/Tests
+  - apps/cli/Sources
+  - packages/capture-this-core/Sources
+  - packages/capture-this-core/Tests
 excluded:
   - .build
   - DerivedData

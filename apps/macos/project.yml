@@ -25,9 +25,9 @@ targets:
     platform: macOS
     deploymentTarget: "15.2"
     sources:
-      - path: Sources/Core
-    resources:
+      - path: ../../packages/capture-this-core/Sources
       - path: Resources/Localizable.xcstrings
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisCore
@@ -41,8 +41,8 @@ targets:
       - path: Sources/App
       - path: Sources/Features
       - path: Sources/Services
-    resources:
       - path: Resources
+        buildPhase: resources
     info:
       path: Config/Info.plist
       properties:
@@ -64,7 +64,7 @@ targets:
     platform: macOS
     deploymentTarget: "15.2"
     sources:
-      - path: Sources/CLI
+      - path: ../cli/Sources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.capturethis.CaptureThisCLI
@@ -95,7 +95,7 @@ targets:
     platform: macOS
     deploymentTarget: "15.2"
     sources:
-      - path: Tests/CoreTests
+      - path: ../../packages/capture-this-core/Tests
     dependencies:
       - target: CaptureThisCore
     settings:

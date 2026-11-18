@@ -1,15 +1,19 @@
-name: Release
+name: Release macOS
 
 on:
   push:
     tags:
-      - "v*"
+      - "macos/v*"
   workflow_dispatch:
     inputs:
       version:
         description: "Release version without the leading v, for example 0.1.0"
         required: true
         type: string
+      publish:
+        description: "Publish the release and update Homebrew"
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -33,13 +37,18 @@ jobs:
         run: mise install
 
       - name: Set release metadata
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            version="${{ inputs.version }}"
-            release_tag="v${version}"
+            version="$INPUT_VERSION"
+            release_tag="macos/v${version}"
+            if [[ "${{ inputs.publish }}" != "true" ]]; then
+              release_tag="macos/verify-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+            fi
           else
             release_tag="${GITHUB_REF_NAME}"
-            version="${release_tag#v}"
+            version="${release_tag#macos/v}"
           fi
 
           if [[ ! "$version" =~ ^[0-9]+(\.[0-9]+)*([_-][A-Za-z0-9.-]+)?$ ]]; then
@@ -86,7 +95,9 @@ jobs:
         run: mise run lint
 
       - name: Test
-        run: mise run test
+        run: |
+          mise run test
+          mise run test-core
 
       - name: Build release
         run: MARKETING_VERSION="${{ env.RELEASE_VERSION }}" CURRENT_PROJECT_VERSION="${{ github.run_number }}" mise run release-build
@@ -105,18 +116,33 @@ jobs:
         with:
           tag_name: ${{ env.RELEASE_TAG }}
           name: ${{ env.RELEASE_TAG }}
+          target_commitish: ${{ github.sha }}
           generate_release_notes: true
           draft: true
+          fail_on_unmatched_files: true
           files: |
             artifacts/CaptureThis.app.zip
             artifacts/CaptureThis.dmg
 
+      - name: Verify uploaded release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          download_dir="$(mktemp -d)"
+          gh release download "$RELEASE_TAG" --dir "$download_dir"
+          cmp artifacts/CaptureThis.app.zip "$download_dir/CaptureThis.app.zip"
+          cmp artifacts/CaptureThis.dmg "$download_dir/CaptureThis.dmg"
+          release_url="$(gh release view "$RELEASE_TAG" --json url --jq '.url')"
+          printf '[Verified release assets](%s)\n' "$release_url" >> "$GITHUB_STEP_SUMMARY"
+
       - name: Publish release
+        if: github.event_name == 'push' || inputs.publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release edit "${{ env.RELEASE_TAG }}" --draft=false
 
       - name: Create Homebrew tap token
+        if: github.event_name == 'push' || inputs.publish
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
@@ -126,6 +152,7 @@ jobs:
           repositories: homebrew-tap
 
       - name: Update Homebrew tap
+        if: github.event_name == 'push' || inputs.publish
         env:
           TAP_GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
@@ -140,7 +167,7 @@ jobs:
           tap_dir="$(brew --repo meck93/tap)"
 
           mkdir -p "$tap_dir/Casks"
-          cp Casks/capture-this.rb "$tap_dir/Casks/capture-this.rb"
+          cp apps/macos/Casks/capture-this.rb "$tap_dir/Casks/capture-this.rb"
 
           ruby -pi -e 'gsub(/version "[^"]+"/, "version \"#{ENV.fetch("RELEASE_VERSION")}\"")' "$tap_dir/Casks/capture-this.rb"
           ruby -pi -e 'gsub(/sha256 "[^"]+"/, "sha256 \"#{ENV.fetch("DMG_SHA256")}\"")' "$tap_dir/Casks/capture-this.rb"

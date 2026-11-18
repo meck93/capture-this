@@ -1,21 +1,21 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `Sources/` holds application code, grouped by domain: `App/`, `Features/`, `Services/`, `Models/`, and `Extensions/`.
-- `Resources/` contains app assets and bundled resources.
-- `Tests/` hosts XCTest-based unit tests.
-- `Config/` stores `Info.plist` and entitlements.
-- `project.yml` is the XcodeGen source of truth; `CaptureThis.xcodeproj` is generated.
-- `Scripts/` contains packaging helpers (e.g., `package.sh`).
+- `apps/macos/` holds the Mac app, its tests, resources, signing settings, and packaging scripts.
+- `apps/cli/` holds the Swift CLI.
+- `packages/capture-this-core/` holds the shared macOS framework and its tests.
+- XcodeGen uses `apps/macos/project.yml` to generate `apps/macos/CaptureThis.xcodeproj`.
 - `artifacts/` is the output directory for release bundles.
 - `docs/` contains product/research notes.
 
 ## Build, Test, and Development Commands
-Use `mise` tasks (see `.mise.toml`):
+Run the `mise` tasks from the repository root.
 - `mise install` installs Swift, XcodeGen, SwiftLint, and SwiftFormat.
 - `mise run generate` regenerates the Xcode project from `project.yml`.
 - `mise run build` builds a Debug macOS app.
-- `mise run test` runs unit tests.
+- `mise run test` runs the Mac app tests.
+- `mise run build-cli` builds the CLI.
+- `mise run test-core` runs the shared framework tests.
 - `mise run lint` runs SwiftLint and SwiftFormat in lint mode.
 - `mise run format` auto-formats Swift sources.
 - `mise run release-build` builds a Release app bundle.
@@ -31,22 +31,22 @@ Always run and fix failures in `mise run lint`, `mise run test`, and `mise run b
 - Keep new features scoped to existing folders (e.g., `Features/` for user flows).
 
 ## Testing Guidelines
-- Tests are written with XCTest in `Tests/`.
-- Run tests with `mise run test` before submitting changes.
+- Use XCTest. Keep Mac app tests in `apps/macos/Tests/` and core tests in `packages/capture-this-core/Tests/`.
+- Run `mise run test` and `mise run test-core` before you submit changes.
 - Add or update tests when touching behavior (especially in `Services/` and `Features/`).
 
 ## Commit & Pull Request Guidelines
 Commits follow a Conventional style (`type(scope): summary`), for example `fix(ci): add missing settings`. Keep summaries imperative and under 72 characters, squash noisy WIPs, and include `project.yml`/`Config/` updates when required to build. PRs should describe user impact, list verification commands, link related issues, attach UI screenshots when visuals change, and call out entitlement/signing or `Info.plist` updates. Ensure `mise run lint`, `mise run test`, and `mise run build` succeed before requesting review.
 
 ## Security & Environment Notes
-Never commit signing assets (`*.p12`, `*.mobileprovision`), API keys, or `.env*` files. Keep secrets out of `Config/Info.plist`, and update entitlements in `Config/CaptureThis.entitlements` only when adding capabilities.
+Never commit signing assets (`*.p12`, `*.mobileprovision`), API keys, or `.env*` files. Keep secrets out of `apps/macos/Config/Info.plist`. Update `apps/macos/Config/CaptureThis.entitlements` only when you add app capabilities.
 
 ## Code Search & Refactoring Tools
 ### Xcode Refactor vs ripgrep
 **Use Xcode refactoring when structure matters.** It understands symbols and updates references without touching comments/strings.
 
 - Refactors: rename types/functions, change initializer signatures, update protocol conformances.
-- Safe API migrations across `Sources/`.
+- Safe API migrations across source directories.
 
 **Use `rg` when text is enough.** It is fastest for literals, TODOs, config values, or non-code assets.
 
@@ -57,7 +57,7 @@ Never commit signing assets (`*.p12`, `*.mobileprovision`), API keys, or `.env*`
 **Snippets:**
 
 ```bash
-rg -n 'NSStatusItem' -t swift Sources
+rg -n 'NSStatusItem' -t swift apps/macos/Sources
 ```
 
 ```bash
@@ -65,5 +65,5 @@ rg -n 'TODO|FIXME' -t swift
 ```
 
 ```bash
-open CaptureThis.xcodeproj
+open apps/macos/CaptureThis.xcodeproj
 ```

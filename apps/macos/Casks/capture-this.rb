@@ -2,7 +2,7 @@ cask "capture-this" do
   version "0.1.0"
   sha256 "REPLACE_WITH_DMG_SHA256"
 
-  url "https://github.com/meck93/capture-this/releases/download/v#{version}/CaptureThis.dmg"
+  url "https://github.com/meck93/capture-this/releases/download/macos/v#{version}/CaptureThis.dmg"
   name "CaptureThis"
   desc "Native macOS menu bar app for screen recording"
   homepage "https://github.com/meck93/capture-this"
