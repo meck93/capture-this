@@ -27,31 +27,33 @@ The GitHub App must be installed on `meck93/homebrew-tap` with `contents:write` 
 
 ## Automated Release Steps
 
-Release by pushing a semver-style tag:
+Push a Mac release tag.
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag macos/v0.4.1
+git push origin macos/v0.4.1
 ```
 
-Or run the `Release` workflow manually from GitHub Actions with:
+To publish from GitHub Actions, run **Release macOS** with the version (for example, `0.4.1`) and select **Publish the release and update Homebrew**.
 
-```text
-version = 0.1.0
+To verify a branch before you publish, leave the publish option clear. The workflow uploads the DMG and ZIP to a draft with a unique verification tag. It downloads both files and compares them with the build output. Open the draft link in the workflow summary to inspect the files.
+
+```bash
+gh workflow run release.yml --ref <branch> -f version=0.4.1
 ```
 
 The release workflow will:
 
 1. Generate the Xcode project.
-2. Run lint and tests.
+2. Run lint, app tests, and core tests.
 3. Build the release app.
 4. Package `artifacts/CaptureThis.app.zip` and `artifacts/CaptureThis.dmg`.
-5. Create or update the GitHub release for `v0.1.0`.
-6. Calculate the SHA-256 for `artifacts/CaptureThis.dmg`.
+5. Upload both files to a draft and verify the downloads.
+6. For a publish run, publish the draft as `macos/v0.4.1` and use the DMG checksum to update the tap.
 7. Create a GitHub App installation token for `meck93/homebrew-tap`.
 8. Tap `meck93/homebrew-tap` with the GitHub App token.
 9. Resolve the canonical tap checkout with `brew --repo meck93/tap`.
-10. Copy `Casks/capture-this.rb` from this repository into the tap checkout.
+10. Copy `apps/macos/Casks/capture-this.rb` from this repository into the tap checkout.
 11. Update `Casks/capture-this.rb` with the release version and DMG checksum.
 12. Run `brew audit --cask meck93/tap/capture-this`.
 13. Commit and push the tap update.
@@ -60,7 +62,7 @@ The first successful release creates `Casks/capture-this.rb` in the tap if it do
 
 ## Local Cask Template
 
-The source cask template lives at `Casks/capture-this.rb` in this repository. Its checked-in version intentionally uses:
+The source cask template is at `apps/macos/Casks/capture-this.rb`. The template uses this placeholder for the checksum.
 
 ```ruby
 sha256 "REPLACE_WITH_DMG_SHA256"
@@ -84,10 +86,8 @@ mise run package
 Create or update the matching GitHub release:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
-gh release create v0.1.0 artifacts/CaptureThis.dmg artifacts/CaptureThis.app.zip \
-  --title "CaptureThis 0.1.0"
+gh release create macos/v0.4.1 artifacts/CaptureThis.dmg artifacts/CaptureThis.app.zip \
+  --target main --title "CaptureThis 0.4.1"
 ```
 
 Compute the DMG checksum:
@@ -102,14 +102,15 @@ Then update the tap cask:
 git clone git@github.com:meck93/homebrew-tap.git
 cd homebrew-tap
 mkdir -p Casks
-cp /path/to/capture-this/Casks/capture-this.rb Casks/capture-this.rb
+cp /path/to/capture-this/apps/macos/Casks/capture-this.rb Casks/capture-this.rb
 ```
 
 Set the release values:
 
 ```ruby
-version "0.1.0"
+version "0.4.1"
 sha256 "DMG_SHA256_FROM_SHASUM"
+url "https://github.com/meck93/capture-this/releases/download/macos/v#{version}/CaptureThis.dmg"
 ```
 
 Validate and push:
@@ -121,7 +122,7 @@ cp Casks/capture-this.rb "$tap_dir/Casks/capture-this.rb"
 cd "$tap_dir"
 brew audit --cask meck93/tap/capture-this
 git add Casks/capture-this.rb
-git commit -m "chore: update CaptureThis to 0.1.0"
+git commit -m "chore: update CaptureThis to 0.4.1"
 git push
 ```
 

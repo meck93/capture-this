@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CATALOG_PATH="${1:-Resources/Localizable.xcstrings}"
+CATALOG_PATH="${1:-apps/macos/Resources/Localizable.xcstrings}"
 
 if [[ ! -f "${CATALOG_PATH}" ]]; then
   echo "Localization catalog not found: ${CATALOG_PATH}" >&2

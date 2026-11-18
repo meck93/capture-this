@@ -9,7 +9,7 @@ swiftformat = "latest"
 
 [tasks.generate]
 description = "Generate the Xcode project"
-run = "xcodegen generate"
+run = "xcodegen generate --spec apps/macos/project.yml"
 
 [tasks.lint]
 description = "Run localization, SwiftLint, and SwiftFormat checks"
@@ -17,7 +17,7 @@ run = ["mise run localization-lint", "swiftlint --strict", "swiftformat --lint .
 
 [tasks.localization-lint]
 description = "Validate English and German localization coverage"
-run = "bash Scripts/validate-localizations.sh"
+run = "bash apps/macos/Scripts/validate-localizations.sh"
 
 [tasks.format]
 description = "Format Swift code with SwiftFormat"
@@ -25,19 +25,19 @@ run = "swiftformat ."
 
 [tasks.build]
 description = "Build the app"
-run = ["mise run generate", "xcodebuild -scheme CaptureThis -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"]
+run = ["mise run generate", "xcodebuild -project apps/macos/CaptureThis.xcodeproj -scheme CaptureThis -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"]
 
 [tasks.test]
 description = "Run unit tests"
-run = "xcodebuild -scheme CaptureThis -configuration Debug -derivedDataPath .build -destination 'platform=macOS' test"
+run = "xcodebuild -project apps/macos/CaptureThis.xcodeproj -scheme CaptureThis -configuration Debug -derivedDataPath .build -destination 'platform=macOS' test"
 
 [tasks.release-build]
 description = "Build a release app bundle"
-run = "xcodebuild -scheme CaptureThis -configuration Release -derivedDataPath .build -destination 'platform=macOS' ${MARKETING_VERSION:+MARKETING_VERSION=$MARKETING_VERSION} ${CURRENT_PROJECT_VERSION:+CURRENT_PROJECT_VERSION=$CURRENT_PROJECT_VERSION} build"
+run = "xcodebuild -project apps/macos/CaptureThis.xcodeproj -scheme CaptureThis -configuration Release -derivedDataPath .build -destination 'platform=macOS' ${MARKETING_VERSION:+MARKETING_VERSION=$MARKETING_VERSION} ${CURRENT_PROJECT_VERSION:+CURRENT_PROJECT_VERSION=$CURRENT_PROJECT_VERSION} build"
 
 [tasks.package]
 description = "Package .app.zip and .dmg"
-run = "Scripts/package.sh"
+run = "apps/macos/Scripts/package.sh"
 
 [tasks.install]
 description = "Build and install the app to /Applications"
@@ -71,12 +71,12 @@ run = ["mise run build", "mise run stop-remove", "mise run wipe-local-state", "m
 
 [tasks.build-cli]
 description = "Build the CLI tool"
-run = "xcodebuild -scheme CaptureThisCLI -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"
+run = "xcodebuild -project apps/macos/CaptureThis.xcodeproj -scheme CaptureThisCLI -configuration Debug -derivedDataPath .build -destination 'platform=macOS' build"
 
 [tasks.test-core]
 description = "Run CaptureThisCore unit tests"
-run = "xcodebuild -scheme CaptureThisCore -configuration Debug -derivedDataPath .build -destination 'platform=macOS' test"
+run = "xcodebuild -project apps/macos/CaptureThis.xcodeproj -scheme CaptureThisCore -configuration Debug -derivedDataPath .build -destination 'platform=macOS' test"
 
 [tasks.ci]
 description = "Generate project, lint, build all targets, run all tests"
-run = ["mise run generate", "mise run lint", "mise run build", "mise run build-cli", "mise run test", "mise run test-core"]
+run = ["mise run lint", "mise run build", "mise run build-cli", "mise run test", "mise run test-core"]

@@ -17,7 +17,7 @@ macOS has built-in screen recording, but it's buried in menus and limited in fea
 - **System audio + microphone** — capture both with simple on/off toggles
 - **Global hotkey** — start/stop recording without touching the mouse
 - **100% local** — no cloud, no accounts, no telemetry. Your recordings stay on your machine
-- **CLI included** — `CaptureThisCLI` for scripting and automation
+- **CLI build target** — `CaptureThisCLI` for scripting and automation
 - **Lightweight** — native Swift + SwiftUI, minimal resource usage
 
 ## Requirements
@@ -77,15 +77,20 @@ Artifacts (`.app.zip` and `.dmg`) are written to `artifacts/`.
 
 ### CLI
 
+Build and run the CLI from the repository root.
+
 ```bash
+mise run generate
+mise run build-cli
+
 # List available capture sources
-capture-this list
+.build/Build/Products/Debug/CaptureThisCLI list
 
 # Record a specific source
-capture-this record
+.build/Build/Products/Debug/CaptureThisCLI record
 
 # Check permissions
-capture-this permissions
+.build/Build/Products/Debug/CaptureThisCLI permissions
 ```
 
 ## Development
@@ -102,16 +107,16 @@ mise run ci          # Full CI pipeline (generate → lint → build → test)
 ### Project structure
 
 ```
-Sources/
-├── App/          # SwiftUI app entry point, app state
-├── Core/         # Recording engine, models, services (framework)
-├── Features/     # Menu bar UI, recording HUD, settings
-├── Services/     # Camera, hotkey, notifications, file access
-└── CLI/          # Command-line interface
-Tests/            # Unit tests
-Config/           # Info.plist, entitlements
-Scripts/          # Build & packaging scripts
+apps/
+├── macos/                 # Mac app, resources, tests, and packaging
+│   └── project.yml        # XcodeGen spec for the app, CLI, and framework
+└── cli/                   # Swift command-line interface
+packages/
+└── capture-this-core/     # Shared macOS recording framework and tests
+.github/workflows/         # CI and macOS release
 ```
+
+Run the `mise` tasks from the repository root. Open the generated project at `apps/macos/CaptureThis.xcodeproj`.
 
 ## Tech stack
 

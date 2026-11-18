@@ -53,14 +53,5 @@ jobs:
             cp /tmp/dev_profile.provisionprofile ~/Library/MobileDevice/Provisioning\ Profiles/
           fi
 
-      - name: Generate project
-        run: mise run generate
-
-      - name: Lint
-        run: mise run lint
-
-      - name: Build
-        run: mise run build
-
-      - name: Test
-        run: mise run test
+      - name: Lint, build, and test
+        run: mise run ci

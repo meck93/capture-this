@@ -3,7 +3,8 @@
 ## Tooling
 
 - Install dependencies with `mise install`.
-- Generate the Xcode project with `mise run generate`.
+- Run all commands from the repository root.
+- Run `mise run generate` to generate `apps/macos/CaptureThis.xcodeproj`.
 
 ## Build & Test
 
@@ -11,6 +12,8 @@
 mise run lint
 mise run build
 mise run test
+mise run build-cli
+mise run test-core
 ```
 
 ## Run the App Manually
